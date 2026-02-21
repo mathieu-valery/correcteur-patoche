@@ -12,7 +12,7 @@ export default function CorrecteurScreen() {
   useEffect(() => {
     async function loadHTML() {
       try {
-        const asset = Asset.fromModule(require('@/CORRECTEUR.html'));
+        const asset = Asset.fromModule(require('@/assets/html/density-correction.html'));
         await asset.downloadAsync();
         
         if (asset.localUri) {

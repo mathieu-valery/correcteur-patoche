@@ -12,7 +12,7 @@ export default function WaterCorrectionScreen() {
   useEffect(() => {
     async function loadHTML() {
       try {
-        const asset = Asset.fromModule(require('@/patoche-water-correction.html'));
+        const asset = Asset.fromModule(require('@/assets/html/water-correction.html'));
         await asset.downloadAsync();
         
         if (asset.localUri) {

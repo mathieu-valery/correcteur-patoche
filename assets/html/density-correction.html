@@ -1,0 +1,3824 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Correction densité à la Patoche — v2.3.5</title>
+
+  <!-- Fonts (Water V3.1 ADN) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Roboto+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    *{box-sizing:border-box}
+    :root{
+      --bg:#12141a; --panel:#1a1d26; --panel2:#171a22; --stroke:rgba(255,255,255,.10); --stroke2:rgba(255,255,255,.14);
+      --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.68); --muted2:rgba(255,255,255,.52);
+      --accent:#6ea8ff; --accent2:#f0c46a; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444;
+      --shadow:0 10px 28px rgba(0,0,0,.35); --shadow2:0 6px 16px rgba(0,0,0,.28);
+      --r-lg:16px; --r-md:12px; --r-sm:10px; --focus:0 0 0 4px rgba(110,168,255,.18);
+
+      --font-ui:"Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono:"Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    body{
+      margin:0;
+      font-family:var(--font-ui);
+      color:var(--text);
+      background:
+        radial-gradient(900px 500px at 18% 14%, rgba(110,168,255,.10), transparent 60%),
+        radial-gradient(900px 500px at 78% 26%, rgba(240,196,106,.08), transparent 60%),
+        linear-gradient(180deg, #12141a 0%, #0f1116 100%);
+      min-height:100vh;
+    }
+
+    .container{max-width:1180px;margin:0 auto;padding:16px;padding-bottom:calc(124px + env(safe-area-inset-bottom))}
+    header,.card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid var(--stroke);
+      border-radius:var(--r-lg);
+      box-shadow:var(--shadow2);
+      backdrop-filter: blur(10px);
+    }
+    header{
+      padding:16px;
+      margin:16px 0 14px;
+      display:flex;align-items:flex-start;justify-content:space-between;gap:12px
+    }
+    .head-left{min-width:0}
+    .head-left-stack{display:flex;flex-direction:column;gap:6px}
+    .head-right{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+    .unit-toggle{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:3px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.03);
+    }
+    .unit-btn{
+      border:0;
+      border-radius:999px;
+      padding:6px 10px;
+      min-width:48px;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.2px;
+      color:var(--muted);
+      background:transparent;
+      cursor:pointer;
+      transition:background .12s ease, color .12s ease, transform .12s ease;
+    }
+    .unit-btn:hover{color:var(--text);transform:translateY(-1px)}
+    .unit-btn:active{transform:translateY(0)}
+    .unit-btn.is-active{
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(110,168,255,.22), rgba(110,168,255,.08));
+      box-shadow:0 2px 8px rgba(0,0,0,.2);
+    }
+    h1{margin:0 0 6px 0;font-size:18px;font-weight:900;letter-spacing:.2px;line-height:1.1}
+    .version{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12px;line-height:1.2;font-weight:700}
+    .plato-trust-note{
+      font-size:11px;
+      color:var(--muted2);
+      font-weight:700;
+      line-height:1.35;
+      max-width:62ch;
+    }
+
+    .card{padding:16px;margin:0 0 12px}
+    .card-title{font-size:12px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+    .mt-12{margin-top:12px}
+    .mt-14{margin-top:14px}
+    .is-hidden{display:none!important}
+    .is-panel-hidden{display:none!important}
+    .volume-inline{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      align-items:flex-start;
+      width:100%;
+      max-width:320px;
+    }
+    #section-volume{
+      border-color:var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+    }
+    #section-volume .input-group{gap:4px}
+    #section-volume .volume-inline .unit-field{width:100%;max-width:320px}
+    #section-volume .card-title{margin-bottom:4px}
+    #section-volume .tip{margin-top:0}
+    #section-volume #volume{max-width:280px}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:820px){
+      .grid.cols-2{grid-template-columns:1fr 1fr}
+    }
+
+    .input-group{display:flex;flex-direction:column;gap:6px;min-width:0}
+    label{font-size:13px;font-weight:800;color:var(--text)}
+    .helper,.tip{font-size:12px;color:var(--muted);line-height:1.35;margin:0}
+    .mobile-help{display:none}
+    .mobile-help summary{
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+      font-size:11px;
+      font-weight:900;
+      color:var(--muted);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px dashed var(--stroke);
+      background:rgba(255,255,255,.03);
+    }
+    .mobile-help summary::-webkit-details-marker{display:none}
+    .mobile-help-content{
+      margin-top:8px;
+      font-size:11px;
+      line-height:1.35;
+      color:var(--muted2);
+      font-weight:700;
+    }
+    .unit-note{
+      display:block;
+      margin-top:3px;
+      font-size:11px;
+      color:var(--muted2);
+      font-weight:700;
+      line-height:1.35;
+    }
+    .stepper-hint{margin-top:4px;font-size:11px;color:var(--muted2);font-weight:800}
+    .tip{margin-top:6px}
+    .tip.ok{color:var(--ok);font-weight:800}
+    .tip.warn{color:var(--warn);font-weight:800}
+    .tip.bad{color:var(--bad);font-weight:800}
+
+    input[type="text"], input[type="number"]{
+      width:100%;
+      padding:12px 56px 12px 12px;
+      border-radius:var(--r-md);
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      color:var(--text);
+      font-size:16px;
+      font-weight:700;
+      outline:none;
+      transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus{
+      border-color:rgba(110,168,255,.55);
+      box-shadow:var(--focus);
+      background:linear-gradient(180deg, rgba(110,168,255,.08), rgba(255,255,255,.02));
+    }
+
+    .unit-field{position:relative}
+    .stepper-shell{
+      position:relative;
+      width:100%;
+      border-radius:var(--r-md);
+      transition:box-shadow .12s ease;
+    }
+    .stepper-shell:focus-within{box-shadow:var(--focus)}
+    .stepper-shell input[type="text"], .stepper-shell input[type="number"]{
+      padding-left:44px;
+      padding-right:44px;
+      text-align:center;
+      font-family:var(--font-mono);
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .stepper-shell input[type="text"]:focus, .stepper-shell input[type="number"]:focus{
+      box-shadow:none;
+    }
+    .stepper-shell input[type="number"]{appearance:textfield;-moz-appearance:textfield}
+    .stepper-shell input[type="number"]::-webkit-outer-spin-button,
+    .stepper-shell input[type="number"]::-webkit-inner-spin-button{
+      -webkit-appearance:none;
+      margin:0;
+    }
+    .stepper-shell.unit-field::after{display:none}
+    .stepper-btn{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      width:30px;
+      height:30px;
+      border-radius:9px;
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+      color:var(--text);
+      font-size:16px;
+      line-height:1;
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color:transparent;
+      transition:transform .12s ease, border-color .12s ease, filter .12s ease, box-shadow .12s ease;
+      z-index:2;
+    }
+    .stepper-btn.minus{left:6px}
+    .stepper-btn.plus{right:6px}
+    .stepper-btn:hover{
+      transform:translateY(-50%);
+      border-color:rgba(110,168,255,.45);
+      filter:brightness(1.06);
+    }
+    .stepper-btn:active{transform:translateY(-50%) scale(.96)}
+    .stepper-btn:focus{outline:none;box-shadow:var(--focus)}
+    .stepper-btn.is-medium{
+      border-color:rgba(110,168,255,.45);
+      box-shadow:0 0 0 2px rgba(110,168,255,.12);
+    }
+    .stepper-btn.is-fast{
+      border-color:rgba(110,168,255,.62);
+      box-shadow:0 0 0 2px rgba(110,168,255,.22);
+      filter:brightness(1.1);
+    }
+    .unit-field::after{
+      content: attr(data-unit);
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform:translateY(calc(-50% + 1px));
+      line-height:1;
+      display:flex;align-items:center;justify-content:center;
+      min-height:22px;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.3px;
+      color:var(--muted);
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--stroke);
+      padding:4px 8px;
+      border-radius:999px;
+      pointer-events:none;
+    }
+
+    .is-bad{border-color: rgba(239,68,68,.65)!important; box-shadow:0 0 0 4px rgba(239,68,68,.12)!important;}
+    .is-warn{border-color: rgba(245,158,11,.60)!important; box-shadow:0 0 0 4px rgba(245,158,11,.12)!important;}
+    .field-msg{min-height:16px;font-size:12px;line-height:1.25;color:var(--muted2);margin-top:2px;font-weight:700}
+    .field-msg.bad{color:var(--bad);font-weight:900}
+    .field-msg.warn{color:var(--warn);font-weight:900}
+    .field-msg.ok{color:var(--ok);font-weight:900}
+    #mode-inverse .field-msg{min-height:0;font-size:11px;margin-top:4px}
+
+    .btn{
+      border-radius:999px;
+      padding:10px 12px;
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      color:var(--text);
+      font-size:12px;
+      font-weight:900;
+      cursor:pointer;
+      transition:transform .12s ease, border-color .12s ease, filter .12s ease, box-shadow .12s ease;
+      user-select:none;
+    }
+    .btn:hover{transform:translateY(-1px);border-color:rgba(110,168,255,.45);box-shadow:0 10px 20px rgba(0,0,0,.22);filter:brightness(1.06)}
+    .btn:active{transform:translateY(0)}
+    .btn-primary{background:linear-gradient(180deg, rgba(110,168,255,.22), rgba(110,168,255,.08));border-color:rgba(110,168,255,.45)}
+    .btn-warm{background:linear-gradient(180deg, rgba(240,196,106,.22), rgba(240,196,106,.08));border-color:rgba(240,196,106,.45)}
+    .btn-ghost{background:rgba(255,255,255,.03)}
+    .btn-small{padding:8px 10px;font-size:11px}
+    .btn-compact.is-on{
+      border-color:rgba(110,168,255,.55);
+      background:linear-gradient(180deg, rgba(110,168,255,.20), rgba(110,168,255,.08));
+      color:var(--text);
+    }
+    .btn:focus{outline:none;box-shadow:var(--focus)}
+    .btn[disabled]{opacity:.5;cursor:not-allowed;filter:none;transform:none!important;box-shadow:none!important}
+
+    /* ===== Compact mode ===== */
+    body.compact .container{padding:12px;padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+    body.compact header{padding:12px;margin:12px 0 10px}
+    body.compact .card{padding:12px;margin:0 0 10px}
+    body.compact .tab{min-height:52px;padding:9px 10px}
+    body.compact .tab-sub{display:none}
+    body.compact .prod-panel{padding:10px}
+    body.compact .prod-kicker{margin-bottom:4px}
+    body.compact .helper,
+    body.compact .tip,
+    body.compact .slider-hint,
+    body.compact #mix-helper,
+    body.compact .mode-banner{display:none}
+    body.compact .mode-option small{display:none}
+    body.compact .action-card{padding:9px}
+    body.compact .info-tile{padding:10px}
+    body.compact .info-tile-sub{display:none}
+    body.compact .stickybar{padding:7px 9px}
+    body.compact #section-volume .tip{display:none}
+
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
+    .tab{
+      width:100%;text-align:left;padding:12px 12px;border-radius:var(--r-lg);
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      color:var(--muted);font-weight:900;cursor:pointer;
+      transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    .tab-main{
+      display:block;
+      font-size:14px;
+      font-weight:900;
+      line-height:1.2;
+      color:var(--text);
+    }
+    .tab-sub{
+      display:block;
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+      margin-top:4px;
+      line-height:1.2;
+    }
+    .tab:hover{transform:translateY(-1px);border-color:rgba(110,168,255,.35);filter:brightness(1.05)}
+    .tab.active{
+      color:var(--text);
+      border-color:rgba(110,168,255,.55);
+      box-shadow:var(--shadow2);
+      background:
+        radial-gradient(600px 260px at 20% 0%, rgba(110,168,255,.12), transparent 55%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+
+    .prod-split{display:grid;grid-template-columns:1fr;gap:12px}
+    .prod-col{min-width:0}
+    .prod-panel{
+      border:1px solid var(--stroke);
+      border-radius:var(--r-lg);
+      padding:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      box-shadow:var(--shadow2);
+      position:relative;
+      overflow:hidden;
+    }
+    .prod-panel::before{
+      content:'';
+      position:absolute;
+      left:0;
+      right:0;
+      top:0;
+      height:1px;
+      background:linear-gradient(90deg, rgba(110,168,255,.32), rgba(240,196,106,.20), transparent);
+      opacity:.45;
+      pointer-events:none;
+    }
+    .prod-panel.is-disabled{opacity:.55; filter:saturate(.7)}
+    .prod-kicker{
+      margin:0 0 8px;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      color:var(--muted2);
+      font-weight:900;
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border:1px solid var(--stroke);
+      border-radius:999px;
+      background:rgba(255,255,255,.03);
+    }
+    @media (min-width:981px){
+      header{padding:14px;margin:12px 0 10px}
+      h1{font-size:18px;letter-spacing:.15px}
+      .version{font-size:11px;gap:8px}
+      .plato-trust-note{font-size:10px}
+      .unit-toggle{padding:2px}
+      .unit-btn{padding:5px 9px;min-width:44px}
+      .card{padding:13px;margin:0 0 9px}
+      .tabs{gap:10px;margin:0 0 8px}
+      .tab{padding:10px 12px;min-height:58px}
+      .tab-main{font-size:14px}
+      .tab-sub{font-size:11px;margin-top:2px}
+      .prod-split{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+      .prod-col{display:flex}
+      .prod-panel{
+        padding:11px;
+        width:100%;
+        height:100%;
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+      }
+      .prod-kicker{margin-bottom:6px}
+      .mode-toggle{padding:9px;gap:8px}
+      .mode-option{padding:8px}
+      .mode-option small{
+        display:block;
+        font-size:11px;
+        line-height:1.3;
+        max-width:100%;
+        white-space:normal;
+        overflow:visible;
+        text-overflow:clip;
+      }
+      .mode-banner{
+        display:flex;
+        padding:8px 10px;
+        margin:8px 0 0;
+        gap:8px;
+      }
+      .mode-chip{padding:6px 8px;font-size:11px}
+      .mode-hint{font-size:11px;line-height:1.3}
+      .results-grid{gap:10px;align-items:stretch}
+      .info-tile{
+        padding:12px;
+        display:flex;
+        flex-direction:column;
+        justify-content:flex-start;
+        min-height:122px;
+      }
+      .info-tile-value{font-size:20px}
+      #sugar-results .results-grid,
+      #inverse-results .results-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+      #dilution-results .results-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+      @media (min-width:1380px){
+        #sugar-results .results-grid,
+        #inverse-results .results-grid,
+        #dilution-results .results-grid{
+          grid-template-columns:repeat(4,minmax(0,1fr));
+        }
+      }
+      .action-card{padding:10px;gap:10px}
+      .action-main{font-size:14px}
+      #action-card-sugars .action-sub{display:block;font-size:11px;line-height:1.3}
+      #panel-sugars-params details.accordion{display:none}
+      #panel-sugars-action .slider-hint{display:none}
+      #mode-direct .sugar-sliders{
+        grid-template-columns:repeat(6,minmax(0,1fr));
+        gap:10px;
+        margin-top:8px;
+        align-items:stretch;
+      }
+      #mode-direct .slider-card-saccharose{order:1;grid-column:span 2}
+      #mode-direct .slider-card-mdx{order:2;grid-column:span 2}
+      #mode-direct .slider-card-lactose{order:3;grid-column:span 2}
+      #mode-direct .slider-card-dme{order:4;grid-column:span 3}
+      #mode-direct .slider-card-lme{order:5;grid-column:span 3}
+      .slider-card{
+        padding:10px;
+        min-height:96px;
+        display:flex;
+        flex-direction:column;
+      }
+      .slider-title{font-size:13px;margin-bottom:6px}
+      #section-volume{
+        max-width:none;
+        margin:0 0 8px;
+        padding:10px 14px;
+      }
+      #section-volume .card-title{margin:0 0 6px}
+      #section-volume .volume-inline{max-width:320px}
+      #section-volume .volume-inline .unit-field{max-width:none}
+      #section-volume .volume-inline .field-msg{min-height:0;font-size:11px}
+      #section-volume .volume-inline .tip{display:none}
+      #section-volume #volume{max-width:none}
+    }
+
+    .results-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin:12px 0 6px;
+    }
+    @media (min-width:820px){ .results-grid{grid-template-columns:1fr 1fr} }
+
+    .info-tile{
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(255,255,255,.04), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
+      border-radius:var(--r-lg);
+      padding:14px;
+      box-shadow:var(--shadow2);
+      min-width:0;
+      overflow:hidden;
+    }
+    .info-tile.risk{
+      border-color: rgba(245,158,11,.45);
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(245,158,11,.10), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    }
+    .info-tile.high-risk{
+      border-color: rgba(239,68,68,.48);
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(239,68,68,.13), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    }
+    .info-tile-title{
+      font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 8px;font-weight:900;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .info-tile-value{
+      font-family:var(--font-mono);font-size:20px;font-weight:800;letter-spacing:.2px;margin:0 0 6px;color:var(--text);
+      min-width:0;overflow-wrap:anywhere;
+    }
+    .info-tile-sub{
+      font-size:12px;color:var(--muted);line-height:1.35;font-weight:700;
+      min-width:0;overflow-wrap:anywhere;
+    }
+
+    .info-tile.action{
+      border-color:rgba(110,168,255,.55);
+      box-shadow:0 0 0 4px rgba(110,168,255,.12), var(--shadow2);
+      background:
+        radial-gradient(900px 260px at 20% 0%, rgba(110,168,255,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+
+    .action-card{
+      margin-top:12px;
+      border-radius:var(--r-lg);
+      border:1px solid var(--stroke2);
+      box-shadow:var(--shadow2);
+      background:
+        radial-gradient(900px 260px at 20% 0%, rgba(110,168,255,.14), transparent 60%),
+        radial-gradient(900px 260px at 78% 20%, rgba(240,196,106,.10), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      padding:12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .action-card.ok{
+      border-color: rgba(16,185,129,.40);
+      background:
+        radial-gradient(900px 260px at 20% 0%, rgba(16,185,129,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+    .action-card.warn{
+      border-color: rgba(245,158,11,.42);
+      background:
+        radial-gradient(900px 260px at 20% 0%, rgba(245,158,11,.14), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+    .action-card.bad{
+      border-color: rgba(239,68,68,.45);
+      background:
+        radial-gradient(900px 260px at 20% 0%, rgba(239,68,68,.14), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+    .action-left{display:flex;gap:10px;align-items:flex-start;min-width:0}
+    .action-text{min-width:0}
+    .action-head{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      margin:0 0 4px;
+    }
+    .action-dot{
+      width:12px;height:12px;border-radius:50%;
+      margin-top:4px;
+      background:rgba(255,255,255,.18);
+      border:1px solid var(--stroke);
+      flex:0 0 auto;
+    }
+    .action-card.ok .action-dot{background:rgba(16,185,129,.85)}
+    .action-card.warn .action-dot{background:rgba(245,158,11,.85)}
+    .action-card.bad .action-dot{background:rgba(239,68,68,.85)}
+    .action-kicker{
+      font-size:11px;
+      color:var(--muted2);
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      font-weight:900;
+      margin:0;
+    }
+    .action-state{
+      display:inline-flex;
+      align-items:center;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      font-size:10px;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      font-weight:900;
+      color:var(--muted);
+      background:rgba(255,255,255,.04);
+      white-space:nowrap;
+    }
+    .action-state.ok{
+      color:rgba(16,185,129,.98);
+      border-color:rgba(16,185,129,.35);
+      background:rgba(16,185,129,.10);
+    }
+    .action-state.warn{
+      color:rgba(245,158,11,.98);
+      border-color:rgba(245,158,11,.35);
+      background:rgba(245,158,11,.12);
+    }
+    .action-state.bad{
+      color:rgba(239,68,68,.98);
+      border-color:rgba(239,68,68,.35);
+      background:rgba(239,68,68,.12);
+    }
+    .action-main{
+      margin:0;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.2px;
+      color:var(--text);
+      line-height:1.25;
+    }
+    .action-main b{font-family:var(--font-mono); font-weight:800}
+    .action-sub{
+      margin:6px 0 0;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:700;
+      line-height:1.35;
+      max-width: 64ch;
+    }
+    .action-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      white-space:nowrap;
+      height:fit-content;
+    }
+    .action-pill span{font-family:var(--font-mono);color:var(--text);font-weight:800}
+
+    .num{
+      font-family:var(--font-mono);
+      font-weight:900;
+      letter-spacing:.2px;
+      padding:2px 7px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      transform:translateY(-1px);
+    }
+    .num.ok   { color:rgba(16,185,129,.98); border-color:rgba(16,185,129,.35); background:rgba(16,185,129,.08); }
+    .num.warn { color:rgba(245,158,11,.98); border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.10); }
+    .num.bad  { color:rgba(239,68,68,.98);  border-color:rgba(239,68,68,.35);  background:rgba(239,68,68,.10); }
+    .num.info { color:rgba(110,168,255,.98);border-color:rgba(110,168,255,.35);background:rgba(110,168,255,.10); }
+
+    .alert,.js-warning{
+      border-radius:var(--r-lg);
+      border:1px solid var(--stroke2);
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(240,196,106,.10), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      padding:12px;
+      color:var(--text);
+      font-size:13px;
+      line-height:1.35;
+      font-weight:700;
+    }
+    .js-warning{
+      margin:0 0 12px;
+      border-color: rgba(239,68,68,.35);
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(239,68,68,.10), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    }
+    .noscript-warning{margin:16px}
+
+    .mode-toggle{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      padding:12px;border-radius:var(--r-lg);
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      margin:12px 0 12px;box-shadow:var(--shadow2);
+    }
+    .mode-option{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+      margin:0;
+      cursor:pointer;
+      border:1px solid var(--stroke);
+      border-radius:var(--r-md);
+      padding:10px;
+      background:rgba(255,255,255,.03);
+      transition:border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+    }
+    .mode-option:hover{transform:translateY(-1px);border-color:rgba(110,168,255,.35)}
+    .mode-option input{transform:translateY(1px); margin:0 8px 0 0}
+    .mode-option span{
+      display:flex;
+      align-items:center;
+      font-size:13px;
+      font-weight:900;
+      color:var(--text);
+      line-height:1.25;
+    }
+    .mode-option small{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+      line-height:1.3;
+      margin-left:22px;
+    }
+    .mode-option.is-selected{
+      border-color:rgba(110,168,255,.55);
+      box-shadow:0 0 0 3px rgba(110,168,255,.12);
+      background:
+        radial-gradient(700px 220px at 20% 0%, rgba(110,168,255,.12), transparent 70%),
+        rgba(255,255,255,.04);
+    }
+    .mode-lock{grid-column:1 / -1}
+
+    .mode-banner{
+      display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;justify-content:space-between;
+      padding:12px;border-radius:var(--r-lg);
+      border:1px solid var(--stroke);
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(110,168,255,.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow:var(--shadow2);
+    }
+    .mode-chip{
+      display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;
+      border:1px solid var(--stroke);background:rgba(255,255,255,.04);
+      font-weight:900;font-size:12px;color:var(--text);white-space:nowrap
+    }
+    .mode-chip b{color:var(--accent)}
+    .mode-hint{flex:1 1 240px;margin:0;font-size:12px;line-height:1.35;color:var(--muted);font-weight:700}
+
+    .sugar-sliders{display:grid;grid-template-columns:1fr;gap:12px;margin:12px 0 8px}
+    @media (min-width:820px){ .sugar-sliders{grid-template-columns:1fr 1fr} }
+    .slider-card{
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(255,255,255,.04), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
+      border-radius:var(--r-lg);
+      padding:14px;
+      box-shadow:var(--shadow2);
+      min-width:0;
+      overflow:hidden;
+    }
+    .slider-title{font-size:14px;font-weight:900;margin:0 0 6px;color:var(--text)}
+    .slider-hint{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+      margin:0 0 10px;
+      font-weight:700;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+    .mix-header-row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:0 0 8px;
+    }
+    .mix-header-row .card-title{margin:0}
+    .ppg-tooltip{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      z-index:3;
+    }
+    .ppg-tooltip-btn{
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      line-height:1;
+      cursor:pointer;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      transition:border-color .12s ease, color .12s ease, filter .12s ease, transform .12s ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .ppg-tooltip-btn:hover{border-color:rgba(110,168,255,.45);color:var(--text);filter:brightness(1.05)}
+    .ppg-tooltip-btn:active{transform:scale(.96)}
+    .ppg-tooltip-btn:focus{outline:none;box-shadow:var(--focus)}
+    .ppg-tooltip-box{
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      min-width:220px;
+      max-width:280px;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--stroke2);
+      background:
+        radial-gradient(700px 220px at 20% 0%, rgba(110,168,255,.10), transparent 60%),
+        linear-gradient(180deg, rgba(23,26,34,.98), rgba(23,26,34,.96));
+      box-shadow:var(--shadow2);
+      color:var(--text);
+      font-size:11px;
+      line-height:1.35;
+      font-weight:700;
+      opacity:0;
+      transform:translateY(-4px);
+      pointer-events:none;
+      transition:opacity .12s ease, transform .12s ease;
+    }
+    .ppg-tooltip:hover .ppg-tooltip-box,
+    .ppg-tooltip:focus-within .ppg-tooltip-box{
+      opacity:1;
+      transform:translateY(0);
+    }
+    .slider-container{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 52px;
+      align-items:center;
+      gap:8px;
+      width:100%;
+      min-width:0;
+    }
+    input[type="range"]{
+      flex:1;height:8px;border-radius:999px;background:rgba(255,255,255,.12);
+      outline:none;-webkit-appearance:none;border:1px solid var(--stroke);padding:0;
+      width:100%;
+      min-width:0;
+    }
+    input[type="range"]:disabled{opacity:.55;filter:saturate(.45);cursor:not-allowed}
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+      background:linear-gradient(180deg, rgba(110,168,255,1), rgba(110,168,255,.65));
+      border:2px solid rgba(0,0,0,.25);box-shadow:0 10px 18px rgba(0,0,0,.22);cursor:pointer
+    }
+    input[type="range"]:disabled::-webkit-slider-thumb{cursor:not-allowed;opacity:.7}
+    input[type="range"]::-moz-range-thumb{
+      width:20px;height:20px;border-radius:50%;
+      background:linear-gradient(180deg, rgba(110,168,255,1), rgba(110,168,255,.65));
+      border:2px solid rgba(0,0,0,.25);box-shadow:0 10px 18px rgba(0,0,0,.22);cursor:pointer
+    }
+    input[type="range"]:disabled::-moz-range-thumb{cursor:not-allowed;opacity:.7}
+    .slider-value{
+      width:52px;
+      min-width:0;
+      text-align:right;
+      font-family:var(--font-mono);
+      font-size:13px;
+      font-weight:800;
+      color:var(--text);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .mix-meta{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 2px}
+    .meta-pill{
+      display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;
+      border:1px solid var(--stroke);background:rgba(255,255,255,.04);color:var(--muted);
+      font-size:12px;font-weight:900
+    }
+    .meta-pill span{color:var(--text);font-family:var(--font-mono);font-weight:800}
+    .meta-pill.warn{
+      border-color:rgba(245,158,11,.55);
+      background:
+        radial-gradient(600px 180px at 20% 0%, rgba(245,158,11,.14), transparent 62%),
+        linear-gradient(180deg, rgba(245,158,11,.12), rgba(245,158,11,.05));
+      color:#ffdca9;
+    }
+    .meta-pill.warn span{color:#ffe7c1}
+
+    .inverse-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:12px 0 12px}
+    @media (min-width:820px){ .inverse-grid{grid-template-columns:1fr 1fr} }
+    .input-group,
+    .slider-card{
+      scroll-margin-top:16px;
+      scroll-margin-bottom:120px;
+    }
+
+    footer{text-align:center;font-size:12px;color:var(--muted);padding:14px 0 18px;font-weight:700}
+    footer a{
+      color:var(--text);
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+    footer a:hover{color:var(--accent2)}
+
+    .stickybar{
+      position:fixed;left:0;right:0;bottom:0;
+      padding:10px 12px;
+      padding-bottom:calc(10px + env(safe-area-inset-bottom));
+      background:
+        radial-gradient(900px 220px at 20% 0%, rgba(110,168,255,.10), transparent 55%),
+        linear-gradient(180deg, rgba(26,29,38,.92), rgba(23,26,34,.92));
+      border-top:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(12px);
+      z-index:50;
+    }
+    .stickybar-inner{
+      max-width:1160px;margin:0 auto;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    }
+    .sticky-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+    .sticky-kicker{font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;font-weight:900}
+    .sticky-main{
+      font-family:var(--font-mono);
+      font-size:14px;font-weight:800;letter-spacing:.2px;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:74vw
+    }
+    .sticky-right{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-weight:900}
+    .sticky-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.18);border:1px solid var(--stroke)}
+    .sticky-dot.ok{background:rgba(16,185,129,.85)}
+    .sticky-dot.warn{background:rgba(245,158,11,.85)}
+    .sticky-dot.bad{background:rgba(239,68,68,.85)}
+    #sticky-mini{font-size:11px;color:var(--muted2);font-weight:700}
+    .sticky-mini-row{display:flex;align-items:center;gap:8px}
+
+    .snap{animation:snap 300ms ease}
+    @keyframes snap{0%{box-shadow:0 0 0 0 rgba(110,168,255,.30)}100%{box-shadow:0 0 0 0 rgba(110,168,255,0)}}
+
+    @media (max-width:980px){
+      .container{padding:12px;padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+      .card{padding:12px;margin:0 0 10px}
+      .prod-split{gap:8px}
+      body.compact .container{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+      body.compact .mode-toggle{padding:6px;margin:6px 0}
+      body.compact .slider-card{padding:7px}
+      body.compact .sticky-right .btn{min-height:32px;padding:7px 8px}
+      #section-volume{padding:10px 12px}
+      #section-volume .volume-inline{max-width:none}
+      #section-volume .volume-inline .unit-field{max-width:none}
+      #section-volume #volume{max-width:none}
+      header{
+        padding:14px;
+        margin:12px 0 10px;
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .head-right{width:100%;justify-content:flex-start}
+      .unit-toggle{order:-1}
+      .tabs{
+        position:static;
+        padding:8px;
+        border-radius:var(--r-lg);
+        border:1px solid var(--stroke);
+        background:
+          radial-gradient(700px 220px at 20% 0%, rgba(110,168,255,.10), transparent 65%),
+          linear-gradient(180deg, rgba(23,26,34,.96), rgba(23,26,34,.94));
+        box-shadow:var(--shadow2);
+      }
+      .tab{
+        min-height:56px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+      }
+      .mode-toggle{grid-template-columns:1fr 1fr;gap:6px;padding:8px;margin:8px 0}
+      .mode-option{padding:8px}
+      .mode-option span{font-size:12px}
+      .mode-option small{display:none}
+      .mode-lock{
+        display:flex;
+        grid-column:1 / -1;
+        padding:6px 8px;
+        border-style:dashed;
+      }
+      .mode-lock span{font-size:11px}
+      #panel-sugars-params .helper,
+      #panel-sugars-params .mode-banner,
+      #panel-sugars-params details.accordion,
+      #mix-helper,
+      .slider-hint{display:none}
+      #panel-dilution-params > .helper,
+      #panel-sugars-params > .helper{display:none}
+      .mobile-help{display:block;margin:0 0 6px}
+      .mobile-help-content{
+        background:rgba(255,255,255,.03);
+        border:1px solid var(--stroke);
+        border-radius:10px;
+        padding:8px;
+      }
+      #panel-sugars-params .grid{gap:8px}
+      #panel-sugars-params .grid.cols-2{margin-top:8px!important}
+      #panel-sugars-params{padding:8px}
+      #panel-sugars-action{padding:8px}
+      #action-card-sugars{position:static}
+      .action-card{margin-top:8px;padding:7px 9px;gap:8px}
+      .action-pill{
+        white-space:normal;
+        max-width:100%;
+        font-size:11px;
+        padding:6px 8px;
+      }
+      .action-pill span{white-space:nowrap}
+      #action-card-sugars .action-sub{display:none}
+      #action-card-sugars .action-main{font-size:13px}
+      #mode-direct .card-title,
+      #mode-inverse .card-title{display:none}
+      #mode-direct .mix-header-row{
+        justify-content:flex-end;
+        margin:0 0 4px;
+      }
+      .ppg-tooltip-btn{
+        width:19px;
+        height:19px;
+        font-size:11px;
+      }
+      .ppg-tooltip-box{
+        left:auto;
+        right:0;
+        min-width:200px;
+        max-width:240px;
+      }
+      #mode-inverse .input-group{gap:4px}
+      #mode-inverse .input-group label{font-size:11px}
+      .slider-card{
+        padding:8px;
+        border:1px solid var(--stroke);
+        border-radius:var(--r-md);
+        background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+        box-shadow:none;
+        min-height:0;
+      }
+      .slider-card:last-child{border-bottom:1px solid var(--stroke)}
+      .slider-title{font-size:13px;margin-bottom:6px}
+      .slider-container{gap:8px}
+      .stepper-shell input[type="text"], .stepper-shell input[type="number"]{
+        padding-left:40px;
+        padding-right:40px;
+      }
+      .stepper-btn{
+        width:28px;
+        height:28px;
+        font-size:15px;
+      }
+      .input-group,
+      .slider-card{
+        scroll-margin-bottom:132px;
+      }
+      input[type="range"]{height:10px}
+      .sugar-sliders{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+      .slider-card-saccharose,
+      .slider-card-mdx,
+      .slider-card-lactose,
+      .slider-card-dme,
+      .slider-card-lme{
+        order:initial;
+        grid-column:span 1;
+        min-width:0;
+      }
+      .mix-meta{gap:8px}
+      #mode-direct .mix-meta{margin:6px 0 4px}
+      .inverse-grid{
+        grid-template-columns:1fr 1fr;
+        gap:8px;
+        margin:6px 0 8px;
+      }
+      .inverse-grid .input-group label{font-size:12px}
+      .inverse-grid input[type="number"]{padding:10px 12px}
+      #mode-inverse #inverse-results{position:static;margin:0 0 6px}
+      #sugar-results .results-grid,
+      #inverse-results .results-grid{
+        grid-template-columns:1fr 1fr;
+        gap:6px;
+        margin-top:6px;
+      }
+      #dilution-results .results-grid{
+        grid-template-columns:1fr 1fr;
+        gap:6px;
+        margin-top:6px;
+      }
+      #sugar-results .info-tile,
+      #inverse-results .info-tile,
+      #dilution-results .info-tile{padding:8px}
+      #sugar-results .info-tile-title,
+      #inverse-results .info-tile-title,
+      #dilution-results .info-tile-title{font-size:10px}
+      #sugar-results .info-tile-value,
+      #inverse-results .info-tile-value,
+      #dilution-results .info-tile-value{font-size:17px}
+      #sugar-results .info-tile-sub,
+      #inverse-results .info-tile-sub,
+      #dilution-results .info-tile-sub{display:none}
+      #sugar-results .info-tile:first-child,
+      #inverse-results .info-tile:first-child{
+        border-color:rgba(110,168,255,.50);
+        box-shadow:0 0 0 3px rgba(110,168,255,.11), var(--shadow2);
+      }
+      .stickybar{padding:7px 8px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+      .stickybar-inner{align-items:flex-start;gap:8px;flex-wrap:wrap}
+      .sticky-left{min-width:0;flex:1 1 100%;width:100%;display:flex;flex-direction:column;gap:4px}
+      .sticky-kicker{display:none}
+      .sticky-main{
+        white-space:normal;
+        overflow:visible;
+        max-width:none;
+        line-height:1.3;
+        font-size:12px;
+        word-break:break-word;
+        padding-bottom:6px;
+      }
+      .sticky-right{
+        width:100%;
+        justify-content:center;
+        flex-wrap:wrap;
+        gap:6px;
+      }
+      #btn-copy-mini{display:none!important}
+      .sticky-right .btn{
+        flex:0 0 auto;
+        min-height:34px;
+        padding:8px 10px;
+        font-size:11px;
+      }
+      .sticky-mini-row{
+        display:flex;
+        align-items:center;
+        gap:8px;
+      }
+      #sticky-mini{
+        display:block;
+        font-size:11px;
+        color:var(--muted);
+        font-weight:800;
+      }
+    }
+    @media (max-width:420px){
+      .inverse-grid{grid-template-columns:1fr}
+      .sugar-sliders{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .inverse-grid input[type="number"]{padding:9px 10px}
+      #mode-inverse .input-group label{font-size:10px}
+    }
+    @media (max-width:380px){
+      .container{padding:10px;padding-bottom:calc(108px + env(safe-area-inset-bottom))}
+      .card{padding:12px}
+      h1{font-size:16px}
+      .mode-toggle{grid-template-columns:1fr}
+      #btn-copy-mini{display:none!important}
+      .sticky-right .btn{min-height:32px;padding:7px 8px}
+      .sticky-mini-row{
+        display:flex;
+        align-items:center;
+        gap:6px;
+      }
+      #sticky-mini{
+        display:block;
+        font-size:10px;
+      }
+    }
+    @media print{
+      body{background:#fff;color:#111}
+      .tabs,.stickybar,.overlay{display:none!important}
+      header,.card{box-shadow:none}
+    }
+
+    /* ===== Accordion (remplace les gros pavés) ===== */
+    details.accordion{
+      margin-top:12px;
+      border-radius:var(--r-lg);
+      border:1px solid var(--stroke2);
+      background:
+        radial-gradient(700px 260px at 20% 0%, rgba(240,196,106,.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow:var(--shadow2);
+      overflow:hidden;
+    }
+    details.accordion summary{
+      list-style:none;
+      cursor:pointer;
+      padding:12px;
+      font-weight:900;
+      font-size:13px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      color:var(--text);
+    }
+    details.accordion summary::-webkit-details-marker{display:none}
+    .acc-badge{
+      font-size:11px;
+      font-weight:900;
+      color:var(--muted);
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      padding:4px 8px;border-radius:999px;
+      white-space:nowrap;
+    }
+    .acc-body{
+      padding:0 12px 12px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      line-height:1.45;
+    }
+    .acc-body code{font-family:var(--font-mono); color:var(--text); font-weight:800}
+    .acc-hr{height:1px;background:var(--stroke);margin:0 12px 10px}
+
+    /* ===== Overlay / Bottom-sheet ===== */
+    .overlay{
+      position:fixed; inset:0;
+      display:none;
+      z-index:80;
+    }
+    .overlay.is-open{display:block}
+    .overlay-backdrop{
+      position:absolute; inset:0;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+    }
+    .sheet{
+      position:absolute; left:50%; transform:translateX(-50%);
+      bottom:12px;
+      width:min(1160px, calc(100vw - 24px));
+      max-height:78vh;
+      overflow:hidden;
+      border-radius:var(--r-lg);
+      border:1px solid var(--stroke2);
+      box-shadow:var(--shadow);
+      background:
+        radial-gradient(900px 260px at 18% 0%, rgba(110,168,255,.14), transparent 60%),
+        radial-gradient(900px 260px at 78% 20%, rgba(240,196,106,.10), transparent 60%),
+        linear-gradient(180deg, rgba(26,29,38,.98), rgba(23,26,34,.98));
+    }
+    .sheet-head{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      padding:14px 14px 10px;
+      border-bottom:1px solid var(--stroke);
+    }
+    .sheet-kicker{
+      font-size:11px; color:var(--muted2);
+      text-transform:uppercase; letter-spacing:.6px; font-weight:900;
+    }
+    .sheet-title{
+      font-size:14px; font-weight:900; color:var(--text);
+    }
+    .sheet-actions{display:flex;gap:8px;align-items:center}
+    .sheet-close{border-radius:999px; padding:10px 12px}
+    .sheet-body{
+      padding:14px;
+      overflow:auto;
+      max-height: calc(78vh - 130px);
+    }
+    .sheet-foot{
+      padding:12px 14px;
+      border-top:1px solid var(--stroke);
+      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    }
+
+    .detail-grid{display:grid; grid-template-columns:1fr; gap:10px;}
+    .detail-grid--top{margin-top:12px}
+    .alert-top{margin-top:12px}
+    @media (min-width:820px){ .detail-grid{grid-template-columns:1fr 1fr} }
+    .detail-row{
+      border:1px solid var(--stroke);
+      border-radius:var(--r-lg);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      padding:12px;
+      box-shadow:var(--shadow2);
+    }
+    .detail-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .detail-name{font-weight:900; font-size:13px; color:var(--text)}
+    .detail-g{font-family:var(--font-mono); font-weight:800; font-size:13px; color:var(--text); white-space:nowrap;}
+    .detail-sub{margin-top:6px; font-size:12px; color:var(--muted); font-weight:700; line-height:1.35}
+    .detail-badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+    }
+    .badge span{font-family:var(--font-mono); color:var(--text); font-weight:800}
+
+    .toast{
+      position:fixed;left:50%;transform:translateX(-50%);
+      bottom:84px;
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.16);
+      color:rgba(255,255,255,.92);
+      padding:10px 12px;border-radius:999px;
+      font-size:12px;font-weight:900;
+      display:none;
+      z-index:90;
+      backdrop-filter: blur(10px);
+      box-shadow:var(--shadow2);
+    }
+    .toast.show{display:block}
+  </style>
+</head>
+
+<body onload="init()">
+  <div class="container">
+    <header>
+      <div class="head-left">
+        <div class="head-left-stack">
+          <h1>Correction densité</h1>
+          <div class="version">
+            <span>Patoche</span><span>•</span><span>v2.3.5</span><span>•</span><span id="version-unit">Unité: SG</span>
+          </div>
+          <p id="plato-trust-note" class="plato-trust-note is-hidden">En mode °P, l’outil convertit depuis SG: un léger écart est normal selon la densité de base.</p>
+        </div>
+      </div>
+
+      <!-- ✅ Reset / Restore déplacés (plus compact, hors “Volume”) -->
+      <div class="head-right">
+        <div class="unit-toggle" role="radiogroup" aria-label="Unité de densité">
+          <button id="unit-btn-sg" class="unit-btn is-active" type="button" role="radio" aria-checked="true" onclick="setUnit('sg')">SG</button>
+          <button id="unit-btn-plato" class="unit-btn" type="button" role="radio" aria-checked="false" onclick="setUnit('plato')">°P</button>
+        </div>
+        <button id="btn-compact" class="btn btn-ghost btn-small btn-compact" type="button" onclick="toggleCompact()" aria-pressed="false">Compact: OFF</button>
+        <button class="btn btn-ghost btn-small" type="button" onclick="resetClean()">Reset</button>
+        <button class="btn btn-ghost btn-small" type="button" onclick="restoreLastSession()">Restore</button>
+      </div>
+    </header>
+
+    <!-- ✅ VOLUME (ultra compact) -->
+    <div class="card" id="section-volume">
+      <div class="card-title">Volume</div>
+      <div class="input-group volume-inline">
+        <div class="stepper-shell unit-field" data-unit="L">
+          <button class="stepper-btn minus" type="button" aria-label="Diminuer le volume" onclick="nudgeField('volume', -1, 'volume')">-</button>
+          <input type="text" id="volume" value="600" placeholder="ex: 600"
+                 aria-label="Volume (litres)"
+                 inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?"
+                 oninput="calculate(); saveState();">
+          <button class="stepper-btn plus" type="button" aria-label="Augmenter le volume" onclick="nudgeField('volume', 1, 'volume')">+</button>
+        </div>
+        <div class="field-msg" id="msg-volume"></div>
+        <p class="tip">Astuce : “600,0” ou “600.0” → ok.</p>
+        <p id="stepper-hint" class="stepper-hint is-hidden">Astuce : appui long sur -/+ pour faire défiler plus vite.</p>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="card" id="section-tabs">
+      <div class="tabs" role="tablist" aria-label="Choix du mode">
+        <button id="tab-btn-dilution" class="tab active" type="button" data-tab="dilution" onclick="switchTab('dilution', this)" role="tab" aria-selected="true" aria-controls="tab-dilution" tabindex="0">
+          <span class="tab-main">💧 Dilution</span>
+          <span class="tab-sub">OG trop haute</span>
+        </button>
+        <button id="tab-btn-sugars" class="tab" type="button" data-tab="sugars" onclick="switchTab('sugars', this)" role="tab" aria-selected="false" aria-controls="tab-sugars" tabindex="-1">
+          <span class="tab-main">🍬 Enrichir</span>
+          <span class="tab-sub">OG trop basse</span>
+        </button>
+      </div>
+      <!-- TAB DILUTION -->
+      <div id="tab-dilution" class="tab-content active" role="tabpanel" aria-labelledby="tab-btn-dilution">
+        <div class="prod-split">
+          <div class="prod-col">
+            <div class="prod-panel" id="panel-dilution-params">
+              <p class="prod-kicker">1. Paramètres</p>
+              <p class="helper" id="helper-og-dilution">Saisie en <b>SG</b> (ex: 1.050). Tu peux taper <b>1050 → 1.050</b>.</p>
+              <details class="mobile-help" id="mobile-help-dilution">
+                <summary>ℹ️ Aide saisie</summary>
+                <div id="mobile-helper-dilution-content" class="mobile-help-content">Saisie en SG (ex: 1.050).</div>
+              </details>
+
+              <div class="grid cols-2 mt-12">
+                <div class="input-group">
+                  <label for="og-actuelle">Densité actuelle</label>
+                  <div class="stepper-shell unit-field og-unit-field" data-unit="SG">
+                    <button class="stepper-btn minus" type="button" aria-label="Diminuer la densité actuelle" onclick="nudgeField('og-actuelle', -1, 'og')">-</button>
+                    <input type="text" id="og-actuelle" value="1.050" placeholder="1.050" inputmode="decimal"
+                           oninput="onOGEdit(this); calculate(); saveState();">
+                    <button class="stepper-btn plus" type="button" aria-label="Augmenter la densité actuelle" onclick="nudgeField('og-actuelle', 1, 'og')">+</button>
+                  </div>
+                  <div class="field-msg" id="msg-og-actuelle"></div>
+                </div>
+
+                <div class="input-group">
+                  <label for="og-visee">Densité visée</label>
+                  <div class="stepper-shell unit-field og-unit-field" data-unit="SG">
+                    <button class="stepper-btn minus" type="button" aria-label="Diminuer la densité visée" onclick="nudgeField('og-visee', -1, 'og')">-</button>
+                    <input type="text" id="og-visee" value="1.044" placeholder="1.044" inputmode="decimal"
+                           oninput="onOGEdit(this); calculate(); saveState();">
+                    <button class="stepper-btn plus" type="button" aria-label="Augmenter la densité visée" onclick="nudgeField('og-visee', 1, 'og')">+</button>
+                  </div>
+                  <div class="field-msg" id="msg-og-visee"></div>
+                </div>
+              </div>
+
+              <!-- ✅ Pavé remplacé par accordion -->
+              <details class="accordion">
+                <summary>
+                  ℹ️ Mémo dilution / formule
+                  <span class="acc-badge">tap</span>
+                </summary>
+                <div class="acc-hr"></div>
+                <div class="acc-body">
+                  ⚠️ Utilise de l’eau stérile/désoxygénée pour l’appoint.<br><br>
+                  Formule :
+                  <code>Vfinal = Vinitial × (PtsActuels / PtsCible)</code><br>
+                  Avec <code>Pts = (SG − 1) × 1000</code>.<br><br>
+                  Repère rapide : &lt;10% = confort, 10–20% = à surveiller, ≥20% = attention (impact IBU/couleur).
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <div class="prod-col">
+            <div class="prod-panel" id="panel-dilution-action">
+              <p class="prod-kicker">2. Action</p>
+              <div id="action-card-dilution"></div>
+              <div id="dilution-results"></div>
+              <div id="dilution-tip" class="tip"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB SUCRES -->
+      <div id="tab-sugars" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-sugars" hidden>
+        <div class="prod-split">
+          <div class="prod-col">
+            <div class="prod-panel" id="panel-sugars-params">
+              <p class="prod-kicker">1. Paramètres</p>
+              <p class="helper" id="helper-og-sugars">Saisie en <b>SG</b> (ex: 1.040). <b>1040 → 1.040</b>.</p>
+              <details class="mobile-help" id="mobile-help-sugars">
+                <summary>ℹ️ Aide saisie</summary>
+                <div id="mobile-helper-sugars-content" class="mobile-help-content">Saisie en SG (ex: 1.040).</div>
+              </details>
+
+              <!-- ✅ Plus compact : plus de tuile Δ points ici -->
+              <div class="grid cols-2 mt-12">
+                <div class="input-group">
+                  <label for="og-actuelle-sugar">OG actuelle</label>
+                  <div class="stepper-shell unit-field og-unit-field" data-unit="SG">
+                    <button class="stepper-btn minus" type="button" aria-label="Diminuer l’OG actuelle" onclick="nudgeField('og-actuelle-sugar', -1, 'og')">-</button>
+                    <input type="text" id="og-actuelle-sugar" value="1.040" placeholder="1.040" inputmode="decimal"
+                           oninput="onOGEdit(this); calculate(); saveState();">
+                    <button class="stepper-btn plus" type="button" aria-label="Augmenter l’OG actuelle" onclick="nudgeField('og-actuelle-sugar', 1, 'og')">+</button>
+                  </div>
+                  <div class="field-msg" id="msg-og-actuelle-sugar"></div>
+                </div>
+
+                <div class="input-group" id="group-og-visee-sugar">
+                  <label for="og-visee-sugar">OG visée</label>
+                  <div class="stepper-shell unit-field og-unit-field" data-unit="SG">
+                    <button class="stepper-btn minus" type="button" aria-label="Diminuer l’OG visée" onclick="nudgeField('og-visee-sugar', -1, 'og')">-</button>
+                    <input type="text" id="og-visee-sugar" value="1.044" placeholder="1.044" inputmode="decimal"
+                           oninput="onOGEdit(this); calculate(); saveState();">
+                    <button class="stepper-btn plus" type="button" aria-label="Augmenter l’OG visée" onclick="nudgeField('og-visee-sugar', 1, 'og')">+</button>
+                  </div>
+                  <div class="field-msg" id="msg-og-visee-sugar"></div>
+                </div>
+              </div>
+
+              <div class="mode-toggle" id="mode-toggle" aria-label="Mode enrichissement">
+                <label class="mode-option is-selected" id="option-mode-direct">
+                  <span><input type="radio" name="mode-sugar" value="direct" checked onchange="toggleSugarMode(); saveState()"> Je vise une OG</span>
+                  <small>L’outil calcule les grammes a dissoudre.</small>
+                </label>
+                <label class="mode-option" id="option-mode-inverse">
+                  <span><input type="radio" name="mode-sugar" value="inverse" onchange="toggleSugarMode(); saveState()"> J’ajoute des grammes</span>
+                  <small>L’outil estime directement l’OG finale.</small>
+                </label>
+                <label class="mode-option mode-lock" id="mode-lock">
+                  <span><input id="unlock-saccharose" type="checkbox" onchange="toggleSaccharoseLock()"> Saccharose manuel</span>
+                  <small>Active pour piloter le saccharose. Le mix ne peut pas dépasser 100%.</small>
+                </label>
+              </div>
+
+              <div class="mode-banner" role="status" aria-live="polite">
+                <div class="mode-chip" id="mode-chip">Mode : <b>Je vise une OG</b></div>
+                <p class="mode-hint" id="mode-hint">Règle ton mix, et l’outil te donne les grammes à dissoudre pour atteindre l’OG visée.</p>
+              </div>
+
+              <!-- ✅ Pavé PPG remplacé par accordion -->
+              <details class="accordion">
+                <summary>
+                  ℹ️ Mémo PPG / formules / ABV
+                  <span class="acc-badge">tap</span>
+                </summary>
+                <div class="acc-hr"></div>
+                <div class="acc-body">
+                  PPG typiques : saccharose 46 • lactose 36 • maltodextrine 40 • DME 44 • LME 36.<br><br>
+                  Direct : <code>grammes = part × Δpoints × (g/pt/L) × volume(L)</code><br>
+                  Inverse : <code>Δpoints = Σ( grammes / (g/pt/L) ) / volume(L)</code><br><br>
+                  ABV (approx.) : <code>points fermentescibles × 0,131</code><br>
+                  Notes : DME ~85% ferm. • LME ~75% ferm.
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <div class="prod-col">
+            <div class="prod-panel" id="panel-sugars-action">
+              <p class="prod-kicker">2. Action</p>
+              <div id="action-card-sugars"></div>
+
+              <!-- DIRECT -->
+              <div id="mode-direct">
+                <div class="mix-header-row mt-14">
+                  <div class="card-title">Mix (sliders)</div>
+                  <div class="ppg-tooltip">
+                    <button class="ppg-tooltip-btn" type="button" aria-label="Voir les PPG des ingrédients" title="PPG des ingrédients">i</button>
+                    <div class="ppg-tooltip-box">PPG typiques : saccharose 46 • lactose 36 • maltodextrine 40 • DME 44 • LME 36.</div>
+                  </div>
+                </div>
+
+                <div class="sugar-sliders">
+                  <div class="slider-card slider-card-saccharose">
+                    <div class="slider-title">Sucre blanc (saccharose)</div>
+                    <div class="slider-hint" id="saccharose-hint">Variable tampon automatique pour garder un mix total à 100%.</div>
+                    <div class="slider-container">
+                      <input type="range" id="slider-saccharose" min="0" max="100" value="100"
+                             disabled aria-disabled="true" oninput="onMixSliderChange('slider-saccharose')">
+                      <div class="slider-value" id="value-saccharose">100%</div>
+                    </div>
+                  </div>
+
+                  <div class="slider-card slider-card-lactose">
+                    <div class="slider-title">Lactose</div>
+                    <div class="slider-hint">Non fermentescible → ajoute du corps.</div>
+                    <div class="slider-container">
+                      <input type="range" id="slider-lactose" min="0" max="100" value="0"
+                             oninput="onMixSliderChange('slider-lactose')">
+                      <div class="slider-value" id="value-lactose">0%</div>
+                    </div>
+                  </div>
+
+                  <div class="slider-card slider-card-mdx">
+                    <div class="slider-title">Maltodextrine</div>
+                    <div class="slider-hint">Quasi non fermentescible → viscosité/corps.</div>
+                    <div class="slider-container">
+                      <input type="range" id="slider-mdx" min="0" max="100" value="0"
+                             oninput="onMixSliderChange('slider-mdx')">
+                      <div class="slider-value" id="value-mdx">0%</div>
+                    </div>
+                  </div>
+
+                  <div class="slider-card slider-card-dme">
+                    <div class="slider-title">Extrait de malt sec (DME)</div>
+                    <div class="slider-hint">PPG ~44 • majoritairement fermentescible (~85% estimé).</div>
+                    <div class="slider-container">
+                      <input type="range" id="slider-dme" min="0" max="100" value="0"
+                             oninput="onMixSliderChange('slider-dme')">
+                      <div class="slider-value" id="value-dme">0%</div>
+                    </div>
+                  </div>
+
+                  <div class="slider-card slider-card-lme">
+                    <div class="slider-title">Extrait de malt liquide (LME)</div>
+                    <div class="slider-hint">PPG ~36 • peut foncer légèrement (~75% ferment.).</div>
+                    <div class="slider-container">
+                      <input type="range" id="slider-lme" min="0" max="100" value="0"
+                             oninput="onMixSliderChange('slider-lme')">
+                      <div class="slider-value" id="value-lme">0%</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mix-meta" aria-live="polite">
+                  <div class="meta-pill">Saccharose : <span id="mix-buffer">100%</span></div>
+                  <div class="meta-pill">Mix total : <span id="mix-total">100%</span></div>
+                </div>
+
+                <p class="helper" id="mix-helper">Les autres ingrédients montent, et le saccharose baisse automatiquement pour rester à 100%.</p>
+                <div id="sugar-results"></div>
+              </div>
+
+              <!-- INVERSE -->
+              <div id="mode-inverse" class="is-panel-hidden">
+                <div class="inverse-grid">
+                  <div class="input-group">
+                    <label for="g-saccharose">Saccharose (g)</label>
+                    <div class="stepper-shell">
+                      <button class="stepper-btn minus" type="button" aria-label="Diminuer le saccharose" onclick="nudgeField('g-saccharose', -1, 'grams')">-</button>
+                      <input type="number" id="g-saccharose" min="0" max="500000" step="1" value="0" oninput="calculate(); saveState();" inputmode="numeric">
+                      <button class="stepper-btn plus" type="button" aria-label="Augmenter le saccharose" onclick="nudgeField('g-saccharose', 1, 'grams')">+</button>
+                    </div>
+                    <div class="field-msg" id="msg-g-saccharose"></div>
+                  </div>
+                  <div class="input-group">
+                    <label for="g-lactose">Lactose (g)</label>
+                    <div class="stepper-shell">
+                      <button class="stepper-btn minus" type="button" aria-label="Diminuer le lactose" onclick="nudgeField('g-lactose', -1, 'grams')">-</button>
+                      <input type="number" id="g-lactose" min="0" max="500000" step="1" value="0" oninput="calculate(); saveState();" inputmode="numeric">
+                      <button class="stepper-btn plus" type="button" aria-label="Augmenter le lactose" onclick="nudgeField('g-lactose', 1, 'grams')">+</button>
+                    </div>
+                    <div class="field-msg" id="msg-g-lactose"></div>
+                  </div>
+                  <div class="input-group">
+                    <label for="g-mdx">Maltodextrine (g)</label>
+                    <div class="stepper-shell">
+                      <button class="stepper-btn minus" type="button" aria-label="Diminuer la maltodextrine" onclick="nudgeField('g-mdx', -1, 'grams')">-</button>
+                      <input type="number" id="g-mdx" min="0" max="500000" step="1" value="0" oninput="calculate(); saveState();" inputmode="numeric">
+                      <button class="stepper-btn plus" type="button" aria-label="Augmenter la maltodextrine" onclick="nudgeField('g-mdx', 1, 'grams')">+</button>
+                    </div>
+                    <div class="field-msg" id="msg-g-mdx"></div>
+                  </div>
+                  <div class="input-group">
+                    <label for="g-dme">Extrait sec DME (g)</label>
+                    <div class="stepper-shell">
+                      <button class="stepper-btn minus" type="button" aria-label="Diminuer le DME" onclick="nudgeField('g-dme', -1, 'grams')">-</button>
+                      <input type="number" id="g-dme" min="0" max="500000" step="1" value="0" oninput="calculate(); saveState();" inputmode="numeric">
+                      <button class="stepper-btn plus" type="button" aria-label="Augmenter le DME" onclick="nudgeField('g-dme', 1, 'grams')">+</button>
+                    </div>
+                    <div class="field-msg" id="msg-g-dme"></div>
+                  </div>
+                  <div class="input-group">
+                    <label for="g-lme">Extrait liquide LME (g)</label>
+                    <div class="stepper-shell">
+                      <button class="stepper-btn minus" type="button" aria-label="Diminuer le LME" onclick="nudgeField('g-lme', -1, 'grams')">-</button>
+                      <input type="number" id="g-lme" min="0" max="500000" step="1" value="0" oninput="calculate(); saveState();" inputmode="numeric">
+                      <button class="stepper-btn plus" type="button" aria-label="Augmenter le LME" onclick="nudgeField('g-lme', 1, 'grams')">+</button>
+                    </div>
+                    <div class="field-msg" id="msg-g-lme"></div>
+                  </div>
+                </div>
+                <div class="field-msg" id="msg-grams-inverse"></div>
+
+                <div id="inverse-results"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Outil proposé par la
+      <a href="https://maps.app.goo.gl/4EAV4CMsWZrKEm4Y8" target="_blank" rel="noopener noreferrer">Microbrasserie Patoche</a>
+    </footer>
+  </div>
+
+  <!-- Sticky -->
+  <div class="stickybar" role="status" aria-live="polite">
+    <div class="stickybar-inner">
+      <div class="sticky-left">
+        <div class="sticky-kicker" id="sticky-kicker">—</div>
+        <div class="sticky-main" id="sticky-main">Renseigne des valeurs pour voir un résumé.</div>
+        <div class="sticky-mini-row">
+          <span class="sticky-dot" id="sticky-dot"></span>
+          <span id="sticky-mini">—</span>
+        </div>
+      </div>
+      <div class="sticky-right">
+        <!-- ✅ Sticky action unique selon le contexte -->
+        <button id="btn-fix" class="btn btn-ghost is-hidden" type="button" onclick="focusFirstBlockingField()">Corriger</button>
+        <button id="btn-copy-mini" class="btn btn-ghost is-hidden" type="button" onclick="copyDetailsFromSticky()">Copier</button>
+        <button id="btn-details" class="btn btn-warm is-hidden" type="button" onclick="openDetails()">Détails</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay détails sucres (bottom-sheet) -->
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="overlay-backdrop" onclick="closeOverlay()" aria-hidden="true"></div>
+
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet-head">
+        <div>
+          <div class="sheet-kicker">Détails</div>
+          <div id="sheet-title" class="sheet-title">Sucres / extraits</div>
+        </div>
+
+        <div class="sheet-actions">
+          <button id="btn-copy" class="btn btn-ghost btn-small" type="button" onclick="copyDetails()" aria-label="Copier le détail">Copier</button>
+          <button id="btn-close-x" class="btn sheet-close" type="button" onclick="closeOverlay()" aria-label="Fermer">✕</button>
+        </div>
+      </div>
+
+      <div id="sheet-body" class="sheet-body"></div>
+
+      <div class="sheet-foot">
+        <button class="btn btn-ghost" type="button" onclick="copyDetails()">Copier</button>
+        <button id="btn-close-ok" class="btn btn-primary" type="button" onclick="closeOverlay()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">Copié ✅</div>
+
+  <noscript>
+    <div class="js-warning noscript-warning">
+      JavaScript est désactivé, l’outil ne peut pas fonctionner.
+    </div>
+  </noscript>
+
+  <script>
+    // ===== Utils =====
+    function gPerPointPerL(ppg){ return 453.592/(ppg*3.78541); }
+    var currentUnit = 'sg'; // 'sg' | 'plato'
+    function sgToPlato(sg){
+      var n = Number(sg);
+      if(!isFinite(n) || n <= 0) return NaN;
+      return -668.962 + 1262.45*n - 776.43*n*n + 182.94*n*n*n;
+    }
+    function platoToSG(p){
+      var n = Number(p);
+      if(!isFinite(n)) return NaN;
+      return 1 + n / (258.6 - ((n / 258.2) * 227.1));
+    }
+    function parseOGSG(input){
+      var s=String(input||'').trim().replace(',', '.');
+      if(!s) return NaN;
+      if(!/^\d+(?:\.\d+)?$/.test(s)) return NaN;
+      if(s.indexOf('.')!==-1){
+        var v=Number(s);
+        return isFinite(v) ? v : NaN;
+      }
+      var asInt=Number(s);
+      if(!isFinite(asInt)) return NaN;
+      if(asInt>=1000 && asInt<=2000) return asInt/1000;
+      if(asInt>=0 && asInt<=2) return asInt;
+      return NaN;
+    }
+    function parseOGPlato(input){
+      var s = String(input||'').trim().replace(',', '.');
+      if(!s) return NaN;
+      if(!/^\d+(?:\.\d+)?$/.test(s)) return NaN;
+      var p = Number(s);
+      var maxP = sgToPlato(LIMITS.ogMax);
+      if(!isFinite(p) || p < 0 || p > maxP) return NaN;
+      return platoToSG(p);
+    }
+    function parseOGForUnit(input, unit){
+      return (unit === 'plato') ? parseOGPlato(input) : parseOGSG(input);
+    }
+    function parseOG(input){
+      return parseOGForUnit(input, currentUnit);
+    }
+    function parseVolumeInput(input){
+      var s = String(input || '').trim();
+      if(!s) return NaN;
+      s = s.replace(/\s+/g, '');
+      var m = s.match(/\d+(?:[.,]\d+)?/);
+      if(!m) return NaN;
+      var n = parseFloat(String(m[0]).replace(',', '.'));
+      return isFinite(n) ? n : NaN;
+    }
+    function fmt(n,d){
+      d=(typeof d==='number')?d:2;
+      if(!isFinite(n)) return '—';
+      try{ return n.toLocaleString('fr-FR',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+      catch(e){ return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toString(); }
+    }
+    function getDensityUnitLabel(){
+      return currentUnit === 'plato' ? '°P' : 'SG';
+    }
+    function getDensityUnitName(){
+      return currentUnit === 'plato' ? '°Plato' : 'SG';
+    }
+    function getOGExampleText(){
+      return currentUnit === 'plato' ? 'ex: 12.5' : 'ex: 1.044 ou 1044';
+    }
+    function getOGRangeText(){
+      if(currentUnit === 'plato'){
+        var pMin = Math.max(0, sgToPlato(LIMITS.ogMin));
+        var pMax = sgToPlato(LIMITS.ogMax);
+        return fmt(pMin,1) + ' à ' + fmt(pMax,1) + ' °P';
+      }
+      return LIMITS.ogMin.toFixed(3) + ' à ' + LIMITS.ogMax.toFixed(3);
+    }
+    function formatOGInputFromSG(sg, unit){
+      if(!isFinite(sg)) return '';
+      if(unit === 'plato'){
+        var p = sgToPlato(sg);
+        if(!isFinite(p)) return '';
+        return (Math.round(p * 10) / 10).toFixed(1);
+      }
+      return (Math.round(sg * 1000) / 1000).toFixed(3);
+    }
+    function formatOGInput(sg){
+      return formatOGInputFromSG(sg, currentUnit);
+    }
+    function fmtOG(sg, withUnit){
+      if(!isFinite(sg)) return '—';
+      if(currentUnit === 'plato'){
+        var p = sgToPlato(sg);
+        if(!isFinite(p)) return '—';
+        return fmt(p, 1) + (withUnit ? ' °P' : '');
+      }
+      return sg.toFixed(3) + (withUnit ? ' SG' : '');
+    }
+    function fmtSigned(n, d, suffix){
+      if(!isFinite(n)) return '—';
+      var sign = n > 0 ? '+' : (n < 0 ? '-' : '');
+      return sign + fmt(Math.abs(n), d) + (suffix || '');
+    }
+    function fmtDeltaDensity(ogStart, ogEnd){
+      if(!isFinite(ogStart) || !isFinite(ogEnd)) return '—';
+      if(currentUnit === 'plato'){
+        var dP = sgToPlato(ogEnd) - sgToPlato(ogStart);
+        return fmtSigned(dP, 1, ' °P');
+      }
+      var dSG = ogEnd - ogStart;
+      return fmtSigned(dSG, 3, ' SG');
+    }
+    function fmtGrams(g){
+      if(!isFinite(g)) return '—';
+      var n = Math.round(g);
+      var abs = Math.abs(n);
+      var sign = n < 0 ? '-' : '';
+      if(abs >= 1000){
+        var kg = Math.floor(abs / 1000);
+        var rem = abs % 1000;
+        if(rem === 0) return sign + kg + ' kg';
+        return sign + kg + ' kg ' + rem + ' g';
+      }
+      return sign + fmt(abs,0) + ' g';
+    }
+    function isMobileCompact(){
+      try{
+        return !!(window && window.matchMedia && window.matchMedia('(max-width: 980px)').matches);
+      }catch(e){
+        return false;
+      }
+    }
+    function updateSliderLabel(sliderId,labelId){
+      var s=document.getElementById(sliderId); var l=document.getElementById(labelId);
+      if(s && l){ l.textContent = s.value + '%'; }
+    }
+    function setPanelDisabled(panelId, disabled){
+      var el=document.getElementById(panelId);
+      if(!el) return;
+      el.classList.toggle('is-disabled', !!disabled);
+      el.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    }
+    function onOGEdit(input){
+      if(currentUnit !== 'sg') return;
+      var raw = String(input.value||'').trim();
+      var n = parseInt(raw,10);
+      if(/^\d{4}$/.test(raw) && n>=1000 && n<=2000){
+        input.value = (n/1000).toFixed(3);
+        try{ input.classList.remove('snap'); void input.offsetWidth; input.classList.add('snap'); }catch(e){}
+      }
+    }
+    function trimZeros(v){
+      return String(v).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1');
+    }
+    function nudgeField(id, dir, kind, speed){
+      var el = document.getElementById(id);
+      if(!el) return;
+
+      var k = String(kind||'');
+      var s = String(speed||'normal');
+      var step = 1;
+      var min = LIMITS.volumeMin;
+      var max = LIMITS.volumeMax;
+      if(k === 'og'){
+        if(currentUnit === 'plato'){
+          step = 0.1;
+          if(s === 'medium') step = 0.2;
+          else if(s === 'fast') step = 0.3;
+          min = Math.max(0, sgToPlato(LIMITS.ogMin));
+          max = sgToPlato(LIMITS.ogMax);
+        }else{
+          step = 0.001;
+          if(s === 'fast') step = 0.002;
+          min = LIMITS.ogMin;
+          max = LIMITS.ogMax;
+        }
+      }else if(k === 'grams'){
+        step = 1;
+        if(s === 'medium') step = 10;
+        else if(s === 'fast') step = 50;
+        min = 0;
+        max = LIMITS.gramsMax;
+      }else{
+        step = 1;
+        if(s === 'medium') step = 5;
+        else if(s === 'fast') step = 10;
+      }
+
+      var cur = NaN;
+      if(k === 'og'){
+        cur = parseOG(el.value);
+        if(currentUnit === 'plato' && isFinite(cur)) cur = sgToPlato(cur);
+      }else if(k === 'grams'){
+        cur = parseFloat(String(el.value||'').replace(',', '.'));
+      }else{
+        cur = parseVolumeInput(el.value);
+      }
+      if(!isFinite(cur)){
+        if(k === 'og') cur = (currentUnit === 'plato') ? sgToPlato(1.000) : 1.000;
+        else if(k === 'grams') cur = 0;
+        else cur = LIMITS.volumeMin;
+      }
+
+      var next = cur + ((dir < 0) ? -step : step);
+      if(next < min) next = min;
+      if(next > max) next = max;
+
+      if(k === 'og'){
+        if(currentUnit === 'plato'){
+          next = Math.round(next * 10) / 10;
+          var nextSG = platoToSG(next);
+          el.value = formatOGInputFromSG(nextSG, 'plato');
+        }else{
+          next = Math.round(next * 1000) / 1000;
+          el.value = next.toFixed(3);
+        }
+      }else if(k === 'grams'){
+        el.value = String(Math.round(next));
+      }else{
+        next = Math.round(next * 100) / 100;
+        el.value = trimZeros(next.toFixed(2));
+      }
+
+      try{ el.classList.remove('snap'); void el.offsetWidth; el.classList.add('snap'); }catch(e){}
+      try{
+        var ev = new Event('input', { bubbles:true });
+        el.dispatchEvent(ev);
+      }catch(e){
+        try{ calculate(); saveState(); }catch(x){}
+      }
+    }
+    var STEPPER_HINT_KEY = 'patoche_stepper_hint_seen_v1';
+    var stepperHintTimer = null;
+    function markStepperHintSeen(){
+      try{
+        if(typeof localStorage !== 'undefined'){ localStorage.setItem(STEPPER_HINT_KEY, '1'); }
+      }catch(e){}
+    }
+    function hasSeenStepperHint(){
+      try{
+        if(typeof localStorage === 'undefined') return false;
+        return localStorage.getItem(STEPPER_HINT_KEY) === '1';
+      }catch(e){ return false; }
+    }
+    function hideStepperHint(markSeen){
+      var el = document.getElementById('stepper-hint');
+      if(!el) return;
+      el.classList.add('is-hidden');
+      if(stepperHintTimer){ clearTimeout(stepperHintTimer); stepperHintTimer = null; }
+      if(markSeen) markStepperHintSeen();
+    }
+    function showStepperHintOnce(){
+      var el = document.getElementById('stepper-hint');
+      if(!el || hasSeenStepperHint()) return;
+      el.classList.remove('is-hidden');
+      if(stepperHintTimer){ clearTimeout(stepperHintTimer); }
+      stepperHintTimer = setTimeout(function(){ hideStepperHint(true); }, 5000);
+    }
+    var stepperHoldState = { btn:null, timer:null, ticks:0 };
+    function getStepperArgs(btn){
+      if(!btn) return null;
+      var oc = btn.getAttribute('onclick') || '';
+      var m = oc.match(/nudgeField\(\s*'([^']+)'\s*,\s*(-?\d+)\s*,\s*'([^']+)'\s*\)/);
+      if(!m) return null;
+      return { id:m[1], dir:parseInt(m[2],10)||0, kind:m[3] };
+    }
+    function getStepperHoldSpeed(ticks){
+      if(ticks > 14) return 'fast';
+      if(ticks > 7) return 'medium';
+      return 'normal';
+    }
+    function setStepperHoldVisual(btn, speed){
+      if(!btn || !btn.classList) return;
+      btn.classList.toggle('is-medium', speed === 'medium');
+      btn.classList.toggle('is-fast', speed === 'fast');
+    }
+    function clearStepperHold(){
+      var btn = stepperHoldState.btn;
+      if(stepperHoldState.timer){ clearTimeout(stepperHoldState.timer); }
+      stepperHoldState.timer = null;
+      stepperHoldState.btn = null;
+      stepperHoldState.ticks = 0;
+      setStepperHoldVisual(btn, 'normal');
+    }
+    function runStepperHold(){
+      var btn = stepperHoldState.btn;
+      if(!btn){ clearStepperHold(); return; }
+      var a = getStepperArgs(btn);
+      if(!a){ clearStepperHold(); return; }
+      stepperHoldState.ticks += 1;
+      var speed = getStepperHoldSpeed(stepperHoldState.ticks);
+      btn.dataset.holdUsed = '1';
+      setStepperHoldVisual(btn, speed);
+      nudgeField(a.id, a.dir, a.kind, speed);
+
+      var delay = 120;
+      if(stepperHoldState.ticks > 16) delay = 36;
+      else if(stepperHoldState.ticks > 10) delay = 52;
+      else if(stepperHoldState.ticks > 5) delay = 76;
+      stepperHoldState.timer = setTimeout(runStepperHold, delay);
+    }
+    function startStepperHold(btn, ev){
+      if(!btn) return;
+      if(ev && typeof ev.button === 'number' && ev.button !== 0) return;
+      clearStepperHold();
+      stepperHoldState.btn = btn;
+      stepperHoldState.ticks = 0;
+      btn.dataset.holdUsed = '0';
+      setStepperHoldVisual(btn, 'normal');
+      stepperHoldState.timer = setTimeout(runStepperHold, 260);
+    }
+    function stopStepperHold(){
+      clearStepperHold();
+    }
+    function initStepperHold(){
+      if(initStepperHold._bound) return;
+      initStepperHold._bound = true;
+
+      document.addEventListener('pointerdown', function(e){
+        var btn = e.target && e.target.closest ? e.target.closest('.stepper-btn') : null;
+        if(!btn) return;
+        hideStepperHint(true);
+        startStepperHold(btn, e);
+      }, { passive:true });
+
+      document.addEventListener('pointerup', stopStepperHold, { passive:true });
+      document.addEventListener('pointercancel', stopStepperHold, { passive:true });
+      window.addEventListener('blur', stopStepperHold);
+      document.addEventListener('visibilitychange', function(){ if(document.hidden) stopStepperHold(); });
+
+      // Bloque le clic "simple" final après un appui long pour éviter un pas en trop.
+      document.addEventListener('click', function(e){
+        var btn = e.target && e.target.closest ? e.target.closest('.stepper-btn') : null;
+        if(!btn) return;
+        if(btn.dataset && btn.dataset.holdUsed === '1'){
+          btn.dataset.holdUsed = '0';
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      }, true);
+    }
+    function initFieldNormalizers(){
+      if(initFieldNormalizers._bound) return;
+      initFieldNormalizers._bound = true;
+      function bind(id, fn){
+        var el = document.getElementById(id);
+        if(!el) return;
+        el.addEventListener('blur', function(){
+          try{ fn(el); }catch(e){}
+          try{ calculate(); saveState(); }catch(e){}
+        });
+      }
+      var ogIds = ['og-actuelle','og-visee','og-actuelle-sugar','og-visee-sugar'];
+      for(var i=0;i<ogIds.length;i++){
+        bind(ogIds[i], function(el){
+          var og = parseOG(el.value);
+          if(isFinite(og)) el.value = formatOGInput(og);
+        });
+      }
+      bind('volume', function(el){
+        var n = parseVolumeInput(el.value);
+        if(!isFinite(n)) return;
+        if(n < 0) n = 0;
+        el.value = trimZeros((Math.round(n * 100) / 100).toFixed(2));
+      });
+      var gramIds = ['g-saccharose','g-lactose','g-mdx','g-dme','g-lme'];
+      for(var j=0;j<gramIds.length;j++){
+        bind(gramIds[j], function(el){
+          var n = parseFloat(String(el.value||'').replace(',', '.'));
+          if(!isFinite(n) || n <= 0){ el.value = '0'; return; }
+          if(n > LIMITS.gramsMax) n = LIMITS.gramsMax;
+          el.value = String(Math.round(n));
+        });
+      }
+    }
+
+    function pillNum(text, cls){
+      return '<span class="num '+(cls||'info')+'">'+String(text||'')+'</span>';
+    }
+
+    function shouldShowGrams(g){
+      return isFinite(g) && Math.round(g) >= 1;
+    }
+    var LIMITS = {
+      volumeMin: 1,
+      volumeMax: 5000,
+      ogMin: 0.980,
+      ogMax: 1.200,
+      gramsMax: 500000
+    };
+    function isVolumeInRange(v){
+      return isFinite(v) && v >= LIMITS.volumeMin && v <= LIMITS.volumeMax;
+    }
+    function isOGInRange(og){
+      return isFinite(og) && og >= LIMITS.ogMin && og <= LIMITS.ogMax;
+    }
+    function isCompactEnabled(){
+      return !!(document.body && document.body.classList.contains('compact'));
+    }
+    function applyCompactMode(on, opts){
+      var silent = !!(opts && opts.silent);
+      if(document.body){ document.body.classList.toggle('compact', !!on); }
+      var btn = document.getElementById('btn-compact');
+      if(btn){
+        btn.classList.toggle('is-on', !!on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.textContent = on ? 'Compact: ON' : 'Compact: OFF';
+      }
+      if(!silent){
+        try{ saveState(); }catch(e){}
+        try{ calculate(); }catch(e){}
+      }
+    }
+    function toggleCompact(){
+      applyCompactMode(!isCompactEnabled(), { silent:false });
+    }
+    var OG_INPUT_IDS = ['og-actuelle','og-visee','og-actuelle-sugar','og-visee-sugar'];
+    var OG_DEFAULT_SG = {
+      'og-actuelle': 1.050,
+      'og-visee': 1.044,
+      'og-actuelle-sugar': 1.040,
+      'og-visee-sugar': 1.044
+    };
+    function updateOGHelpers(){
+      var hDil = document.getElementById('helper-og-dilution');
+      var hSug = document.getElementById('helper-og-sugars');
+      var mDil = document.getElementById('mobile-helper-dilution-content');
+      var mSug = document.getElementById('mobile-helper-sugars-content');
+      var dilText = '';
+      var sugText = '';
+      if(currentUnit === 'plato'){
+        dilText = 'Saisie en <b>°Plato</b> (ex: 12.5).<span class="unit-note">Note: 1 °P ≈ 10 à 12 g/L (approx.). Le moteur convertit depuis SG pour garder un calcul précis.</span>';
+        sugText = 'Saisie en <b>°Plato</b> (ex: 10.0).<span class="unit-note">Note: 1 °P ≈ 10 à 12 g/L (approx.). Un léger écart est normal selon la densité de départ.</span>';
+      }else{
+        dilText = 'Saisie en <b>SG</b> (ex: 1.050). Tu peux taper <b>1050 → 1.050</b>.';
+        sugText = 'Saisie en <b>SG</b> (ex: 1.040). <b>1040 → 1.040</b>.';
+      }
+      if(hDil) hDil.innerHTML = dilText;
+      if(hSug) hSug.innerHTML = sugText;
+      if(mDil) mDil.innerHTML = dilText;
+      if(mSug) mSug.innerHTML = sugText;
+    }
+    function updateOGPlaceholders(){
+      for(var i=0;i<OG_INPUT_IDS.length;i++){
+        var id = OG_INPUT_IDS[i];
+        var el = document.getElementById(id);
+        if(!el) continue;
+        var sg = OG_DEFAULT_SG[id];
+        el.placeholder = formatOGInputFromSG(sg, currentUnit);
+      }
+    }
+    function updateUnitUI(){
+      var label = getDensityUnitLabel();
+      var unitFields = document.querySelectorAll('.og-unit-field');
+      for(var i=0;i<unitFields.length;i++){
+        unitFields[i].setAttribute('data-unit', label);
+      }
+      var vUnit = document.getElementById('version-unit');
+      if(vUnit) vUnit.textContent = 'Unité: ' + getDensityUnitName();
+      var trust = document.getElementById('plato-trust-note');
+      if(trust) trust.classList.toggle('is-hidden', currentUnit !== 'plato');
+      var bSG = document.getElementById('unit-btn-sg');
+      var bP = document.getElementById('unit-btn-plato');
+      if(bSG){
+        var onSG = currentUnit === 'sg';
+        bSG.classList.toggle('is-active', onSG);
+        bSG.setAttribute('aria-checked', onSG ? 'true' : 'false');
+      }
+      if(bP){
+        var onP = currentUnit === 'plato';
+        bP.classList.toggle('is-active', onP);
+        bP.setAttribute('aria-checked', onP ? 'true' : 'false');
+      }
+      updateOGHelpers();
+      updateOGPlaceholders();
+    }
+    function convertOGInputs(fromUnit, toUnit){
+      for(var i=0;i<OG_INPUT_IDS.length;i++){
+        var id = OG_INPUT_IDS[i];
+        var el = document.getElementById(id);
+        if(!el) continue;
+        var sg = parseOGForUnit(el.value, fromUnit);
+        if(isFinite(sg)) el.value = formatOGInputFromSG(sg, toUnit);
+      }
+    }
+    function setUnit(unit, opts){
+      var u = (unit === 'plato') ? 'plato' : 'sg';
+      var options = opts || {};
+      var silent = !!options.silent;
+      var skipConvert = !!options.skipConvert;
+      var prev = currentUnit;
+      if(prev !== u && !skipConvert){
+        convertOGInputs(prev, u);
+      }
+      currentUnit = u;
+      updateUnitUI();
+      if(!silent){
+        calculate();
+        saveState();
+      }
+    }
+
+    // ===== State =====
+    var STORAGE_KEY = 'patoche-correcteur';
+    var STORAGE_LAST_KEY = 'patoche-correcteur-last';
+    var DEFAULT_STATE = {
+      volume:'600',
+      ogAct:'1.050',
+      ogTar:'1.044',
+      ogAS:'1.040',
+      ogTS:'1.044',
+      unit:'sg',
+      mode:'direct',
+      compact:'0',
+      unlockSac:'0',
+      sSac:'100',
+      sLac:'0',
+      sMdx:'0',
+      sDme:'0',
+      sLme:'0',
+      gSac:'0',
+      gLac:'0',
+      gMdx:'0',
+      gDme:'0',
+      gLme:'0'
+    };
+
+    function buildState(){
+      return {
+        volume: document.getElementById('volume') ? document.getElementById('volume').value : '',
+        ogAct: document.getElementById('og-actuelle') ? document.getElementById('og-actuelle').value : '',
+        ogTar: document.getElementById('og-visee') ? document.getElementById('og-visee').value : '',
+        ogAS: document.getElementById('og-actuelle-sugar') ? document.getElementById('og-actuelle-sugar').value : '',
+        ogTS: document.getElementById('og-visee-sugar') ? document.getElementById('og-visee-sugar').value : '',
+        unit: currentUnit,
+        mode: (document.querySelector('input[name=mode-sugar]:checked') ? document.querySelector('input[name=mode-sugar]:checked').value : 'direct'),
+        compact: isCompactEnabled() ? '1' : '0',
+        unlockSac: (document.getElementById('unlock-saccharose') && document.getElementById('unlock-saccharose').checked) ? '1' : '0',
+        sSac: document.getElementById('slider-saccharose') ? document.getElementById('slider-saccharose').value : '100',
+        sLac: document.getElementById('slider-lactose') ? document.getElementById('slider-lactose').value : '0',
+        sMdx: document.getElementById('slider-mdx') ? document.getElementById('slider-mdx').value : '0',
+        sDme: document.getElementById('slider-dme') ? document.getElementById('slider-dme').value : '0',
+        sLme: document.getElementById('slider-lme') ? document.getElementById('slider-lme').value : '0',
+        gSac: document.getElementById('g-saccharose') ? document.getElementById('g-saccharose').value : '0',
+        gLac: document.getElementById('g-lactose') ? document.getElementById('g-lactose').value : '0',
+        gMdx: document.getElementById('g-mdx') ? document.getElementById('g-mdx').value : '0',
+        gDme: document.getElementById('g-dme') ? document.getElementById('g-dme').value : '0',
+        gLme: document.getElementById('g-lme') ? document.getElementById('g-lme').value : '0'
+      };
+    }
+    function applyState(st){
+      if(!st) return;
+      function setVal(id,v){ var el=document.getElementById(id); if(el && typeof v!=='undefined'){ el.value=v; } }
+      var desiredUnit = (st.unit === 'plato') ? 'plato' : 'sg';
+      setUnit(desiredUnit, { silent:true, skipConvert:true });
+      applyCompactMode(st.compact === '1', { silent:true });
+      setVal('volume', st.volume);
+      setVal('og-actuelle', st.ogAct);
+      setVal('og-visee', st.ogTar);
+      setVal('og-actuelle-sugar', st.ogAS);
+      setVal('og-visee-sugar', st.ogTS);
+      setVal('slider-saccharose', st.sSac);
+      setVal('slider-lactose', st.sLac);
+      setVal('slider-mdx', st.sMdx);
+      setVal('slider-dme', st.sDme);
+      setVal('slider-lme', st.sLme);
+      setVal('g-saccharose', st.gSac);
+      setVal('g-lactose', st.gLac);
+      setVal('g-mdx', st.gMdx);
+      setVal('g-dme', st.gDme);
+      setVal('g-lme', st.gLme);
+
+      var unlock = !!(st.unlockSac === '1');
+      var unlockEl = document.getElementById('unlock-saccharose');
+      if(unlockEl){ unlockEl.checked = unlock; }
+      setSaccharoseLockUI();
+      enforceSugarBuffer();
+
+      var md = (st.mode === 'inverse') ? 'inverse' : 'direct';
+      var r = document.querySelector('input[name=mode-sugar][value="'+md+'"]');
+      if(r){ r.checked = true; }
+      toggleSugarMode(true);
+    }
+    function saveState(){
+      try{
+        if(typeof localStorage!=='undefined'){
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(buildState()));
+        }
+      }catch(e){}
+    }
+    function loadState(){
+      try{
+        var raw = (typeof localStorage!=='undefined') ? localStorage.getItem(STORAGE_KEY) : null;
+        if(!raw){
+          setUnit(DEFAULT_STATE.unit, { silent:true, skipConvert:true });
+          applyCompactMode(DEFAULT_STATE.compact === '1', { silent:true });
+          setSaccharoseLockUI();
+          enforceSugarBuffer();
+          return;
+        }
+        var st=JSON.parse(raw);
+        applyState(st);
+      }catch(e){
+        setUnit(DEFAULT_STATE.unit, { silent:true, skipConvert:true });
+        applyCompactMode(DEFAULT_STATE.compact === '1', { silent:true });
+        setSaccharoseLockUI();
+        enforceSugarBuffer();
+      }
+    }
+    function getResetStatePreservingUnit(){
+      var st = {};
+      for(var k in DEFAULT_STATE){
+        if(Object.prototype.hasOwnProperty.call(DEFAULT_STATE, k)) st[k] = DEFAULT_STATE[k];
+      }
+      var unit = currentUnit === 'plato' ? 'plato' : 'sg';
+      st.unit = unit;
+      if(unit === 'plato'){
+        st.ogAct = formatOGInputFromSG(parseOGSG(DEFAULT_STATE.ogAct), unit);
+        st.ogTar = formatOGInputFromSG(parseOGSG(DEFAULT_STATE.ogTar), unit);
+        st.ogAS = formatOGInputFromSG(parseOGSG(DEFAULT_STATE.ogAS), unit);
+        st.ogTS = formatOGInputFromSG(parseOGSG(DEFAULT_STATE.ogTS), unit);
+      }
+      return st;
+    }
+    function resetClean(){
+      try{
+        if(typeof localStorage!=='undefined'){
+          localStorage.setItem(STORAGE_LAST_KEY, JSON.stringify(buildState()));
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }catch(e){}
+      applyState(getResetStatePreservingUnit());
+      saveState();
+      showToast('Réinitialisé');
+    }
+    function restoreLastSession(){
+      try{
+        var raw = null;
+        if(typeof localStorage!=='undefined'){
+          raw = localStorage.getItem(STORAGE_LAST_KEY) || localStorage.getItem(STORAGE_KEY);
+        }
+        if(!raw){ showToast('Aucune session à restaurer'); return; }
+        var st = JSON.parse(raw);
+        applyState(st);
+        saveState();
+        showToast('Session restaurée');
+      }catch(e){
+        showToast('Restauration impossible');
+      }
+    }
+
+    // ===== Navigation =====
+    function isSaccharoseUnlocked(){
+      var chk = document.getElementById('unlock-saccharose');
+      return !!(chk && chk.checked);
+    }
+    function setSaccharoseLockUI(){
+      var unlocked = isSaccharoseUnlocked();
+      var sac = document.getElementById('slider-saccharose');
+      var hint = document.getElementById('saccharose-hint');
+      var helper = document.getElementById('mix-helper');
+      if(sac){
+        sac.disabled = !unlocked;
+        sac.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
+      }
+      if(hint){
+        hint.textContent = unlocked
+          ? 'Mode manuel : tu ajustes aussi le saccharose (mix total = 100%).'
+          : 'Variable tampon automatique pour garder un mix total à 100%.';
+      }
+      if(helper){
+        helper.textContent = unlocked
+          ? 'Mode manuel : les 5 sliders restent modifiables (dépassement > 100% bloqué).'
+          : 'Les autres ingrédients montent, et le saccharose baisse automatiquement pour rester à 100%.';
+      }
+      updateModeToggleState();
+    }
+    function toggleSaccharoseLock(){
+      setSaccharoseLockUI();
+      enforceSugarBuffer();
+      calculate();
+      saveState();
+    }
+    function updateModeToggleState(){
+      var direct = document.getElementById('option-mode-direct');
+      var inverse = document.getElementById('option-mode-inverse');
+      var lock = document.getElementById('mode-lock');
+      var mode = sugarMode();
+      if(direct) direct.classList.toggle('is-selected', mode === 'direct');
+      if(inverse) inverse.classList.toggle('is-selected', mode === 'inverse');
+      if(lock) lock.classList.toggle('is-selected', isSaccharoseUnlocked());
+    }
+    function readSliderInt(id){
+      var el = document.getElementById(id);
+      var n = el ? parseInt(el.value||'0',10) : 0;
+      if(!isFinite(n)) n = 0;
+      return Math.max(0, Math.min(100, n));
+    }
+    function setSliderInt(id, n){
+      var el = document.getElementById(id);
+      if(!el) return;
+      var v = Math.max(0, Math.min(100, Math.round(n||0)));
+      el.value = String(v);
+    }
+    function enforceSugarBuffer(changedId){
+      var ids = ['slider-lactose','slider-mdx','slider-dme','slider-lme'];
+      var unlocked = isSaccharoseUnlocked();
+
+      if(unlocked){
+        var allIds = ['slider-saccharose','slider-lactose','slider-mdx','slider-dme','slider-lme'];
+        for(var u=0;u<allIds.length;u++){ setSliderInt(allIds[u], readSliderInt(allIds[u])); }
+
+        var changedKnown = !!(changedId && allIds.indexOf(changedId) !== -1);
+        if(changedKnown){
+          var othersU = 0;
+          for(var x=0;x<allIds.length;x++){ if(allIds[x]!==changedId) othersU += readSliderInt(allIds[x]); }
+          var maxForChangedU = Math.max(0, 100 - othersU);
+          var changedValU = readSliderInt(changedId);
+          if(changedValU > maxForChangedU) setSliderInt(changedId, maxForChangedU);
+        }
+
+        var sumU = 0;
+        for(var y=0;y<allIds.length;y++){ sumU += readSliderInt(allIds[y]); }
+        if(sumU > 100){
+          var scaleU = 100 / sumU;
+          var accU = 0;
+          for(var z=0;z<allIds.length;z++){
+            var curU = readSliderInt(allIds[z]);
+            var nextU = (z === allIds.length - 1) ? Math.max(0, 100 - accU) : Math.floor(curU * scaleU);
+            setSliderInt(allIds[z], nextU);
+            accU += nextU;
+          }
+        }
+
+        updateSliderLabel('slider-saccharose','value-saccharose');
+        updateSliderLabel('slider-lactose','value-lactose');
+        updateSliderLabel('slider-mdx','value-mdx');
+        updateSliderLabel('slider-dme','value-dme');
+        updateSliderLabel('slider-lme','value-lme');
+        updateMixMeta();
+        return;
+      }
+
+      if(changedId && ids.indexOf(changedId) !== -1){
+        var others = 0;
+        for(var i=0;i<ids.length;i++){ if(ids[i]!==changedId) others += readSliderInt(ids[i]); }
+        var maxForChanged = Math.max(0, 100 - others);
+        var changedVal = readSliderInt(changedId);
+        if(changedVal > maxForChanged) setSliderInt(changedId, maxForChanged);
+      }
+
+      var sum = 0;
+      for(var j=0;j<ids.length;j++){ sum += readSliderInt(ids[j]); }
+      if(sum > 100){
+        var scale = 100 / sum;
+        var acc = 0;
+        for(var k=0;k<ids.length;k++){
+          var cur = readSliderInt(ids[k]);
+          var next = (k === ids.length - 1) ? Math.max(0, 100 - acc) : Math.floor(cur * scale);
+          setSliderInt(ids[k], next);
+          acc += next;
+        }
+        sum = 100;
+      }
+
+      sum = 0;
+      for(var m=0;m<ids.length;m++){ sum += readSliderInt(ids[m]); }
+      setSliderInt('slider-saccharose', Math.max(0, 100 - sum));
+
+      updateSliderLabel('slider-saccharose','value-saccharose');
+      updateSliderLabel('slider-lactose','value-lactose');
+      updateSliderLabel('slider-mdx','value-mdx');
+      updateSliderLabel('slider-dme','value-dme');
+      updateSliderLabel('slider-lme','value-lme');
+      updateMixMeta();
+    }
+    function onMixSliderChange(changedId){
+      enforceSugarBuffer(changedId);
+      calculate();
+      saveState();
+    }
+    function switchTab(name, btn){
+      var tabs = document.querySelectorAll('.tab');
+      for (var i=0; i<tabs.length; i++){
+        tabs[i].classList.remove('active');
+        tabs[i].setAttribute('aria-selected','false');
+        tabs[i].setAttribute('tabindex','-1');
+      }
+      if(!btn){ btn = document.querySelector('.tab[data-tab="'+name+'"]'); }
+      if (btn){
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected','true');
+        btn.setAttribute('tabindex','0');
+      }
+      var contents = document.querySelectorAll('.tab-content');
+      for (var j=0; j<contents.length; j++){
+        contents[j].classList.remove('active');
+        contents[j].setAttribute('hidden','hidden');
+      }
+      var div = document.getElementById('tab-' + name);
+      if (div){
+        div.classList.add('active');
+        div.removeAttribute('hidden');
+      }
+      calculate();
+      try{ updateModeBanner(); updateModeToggleState(); updateSticky(); validateAllSoft(); renderActionUI(); }catch(e){}
+    }
+    function initTabKeyboard(){
+      var tabs = document.querySelectorAll('.tab');
+      if(!tabs || !tabs.length) return;
+      for(var i=0;i<tabs.length;i++){
+        tabs[i].addEventListener('keydown', function(e){
+          var k = e.key;
+          if(k!=='ArrowRight' && k!=='ArrowLeft' && k!=='Home' && k!=='End') return;
+          e.preventDefault();
+          var all = document.querySelectorAll('.tab');
+          var idx = -1;
+          for(var j=0;j<all.length;j++){ if(all[j]===e.currentTarget){ idx=j; break; } }
+          if(idx<0) return;
+          var next = idx;
+          if(k==='ArrowRight') next = (idx+1) % all.length;
+          else if(k==='ArrowLeft') next = (idx-1+all.length) % all.length;
+          else if(k==='Home') next = 0;
+          else if(k==='End') next = all.length-1;
+          var target = all[next];
+          if(target){
+            switchTab(target.getAttribute('data-tab') || 'dilution', target);
+            target.focus();
+          }
+        });
+      }
+    }
+
+    // ===== Core calcs =====
+    var SUGAR_INFO = {
+      saccharose:      { gPerPtPerL: gPerPointPerL(46), ferm: 1.00 },
+      lactose:         { gPerPtPerL: gPerPointPerL(36), ferm: 0.00 },
+      maltodextrine:   { gPerPtPerL: gPerPointPerL(40), ferm: 0.05 },
+      dme:             { gPerPtPerL: gPerPointPerL(44), ferm: 0.85 },
+      lme:             { gPerPtPerL: gPerPointPerL(36), ferm: 0.75 }
+    };
+
+    function calculate(){
+      calculateDilution();
+      var radios = document.getElementsByName('mode-sugar');
+      var mode = 'direct';
+      for (var i=0; i<radios.length; i++){ if (radios[i].checked) { mode = radios[i].value; break; } }
+      if (mode === 'direct') calculateSugarsDirect();
+      else calculateSugarsInverse();
+
+      try{ updateModeBanner(); updateModeToggleState(); updateMixMeta(); updateSticky(); validateAllSoft(); renderActionUI(); }catch(e){}
+    }
+
+    function getOG_SG(rawVal){
+      var v=parseOG(rawVal);
+      if(!isFinite(v)) return NaN;
+      return v;
+    }
+
+    function tile(title, value, sub, extraClass){
+      return '<div class="info-tile'+(extraClass?(' '+extraClass):'')+'">'
+        + '<div class="info-tile-title">'+title+'</div>'
+        + '<div class="info-tile-value">'+value+'</div>'
+        + (sub ? '<div class="info-tile-sub">'+sub+'</div>' : '')
+        + '</div>';
+    }
+
+    // ===== Dilution =====
+    function calculateDilution(){
+      var vEl = document.getElementById('volume');
+      var ogAEl = document.getElementById('og-actuelle');
+      var ogTEl = document.getElementById('og-visee');
+      var resultsDiv = document.getElementById('dilution-results');
+      var tipDiv = document.getElementById('dilution-tip');
+      if (!vEl || !ogAEl || !ogTEl || !resultsDiv) return;
+
+      var vL = parseVolumeInput(vEl.value);
+      var ogA = getOG_SG(ogAEl.value);
+      var ogT = getOG_SG(ogTEl.value);
+      var ptsA = isFinite(ogA) ? (ogA - 1) * 1000 : NaN;
+      var ptsT = isFinite(ogT) ? (ogT - 1) * 1000 : NaN;
+
+      tipDiv.textContent = '';
+
+      if (!isVolumeInRange(vL) || !isOGInRange(ogA) || !isOGInRange(ogT) || !isFinite(ptsA) || !isFinite(ptsT) || ptsT <= 0 || ptsA <= 0) {
+        setPanelDisabled('panel-dilution-action', true);
+        resultsDiv.innerHTML = '<div class="alert">Renseigne un volume (1 à 5000 L) et deux OG valides ('+getOGRangeText()+').</div>';
+        return;
+      }
+      if (ptsA <= ptsT) {
+        setPanelDisabled('panel-dilution-action', true);
+        resultsDiv.innerHTML = '<div class="alert">La densité actuelle n’est pas au-dessus de la cible — pas de dilution nécessaire.</div>';
+        return;
+      }
+
+      setPanelDisabled('panel-dilution-action', false);
+      var ratio = ptsA / ptsT;
+      var vFinal = vL * ratio;
+      var eauAAjouter = vFinal - vL;
+      var factor = 1 / ratio;
+      var percentWater = (eauAAjouter / vFinal) * 100;
+      var dilutionLevel = 'ok';
+      if(percentWater >= 20) dilutionLevel = 'bad';
+      else if(percentWater >= 10) dilutionLevel = 'warn';
+
+      var tiles = '';
+      tiles += tile(
+        'Eau à ajouter',
+        fmt(eauAAjouter, 2) + ' L',
+        '',
+        (dilutionLevel === 'bad') ? 'high-risk' : (dilutionLevel === 'warn' ? 'risk' : '')
+      );
+      tiles += tile('Volume final', fmt(vFinal, 2) + ' L');
+      tiles += tile('Ajout d’eau', fmt(percentWater, 1) + ' %', 'du volume final');
+      tiles += tile('Impact', 'IBU ↓ ' + fmt((1 - factor) * 100, 1) + ' %',
+                    'Couleur ↓ ' + fmt((1 - factor) * 100, 1) + ' % (estim.)');
+      resultsDiv.innerHTML = '<div class="results-grid">'+tiles+'</div>';
+
+      if (dilutionLevel === 'bad'){
+        tipDiv.textContent = '⛔ Ajout d’eau ' + fmt(percentWater,1) + ' % : attention, impact notable (IBU/couleur).';
+        tipDiv.className = 'tip bad';
+      } else if (dilutionLevel === 'warn') {
+        tipDiv.textContent = '⚠️ Ajout d’eau ' + fmt(percentWater,1) + ' % : à surveiller (impact possible).';
+        tipDiv.className = 'tip warn';
+      } else if (percentWater > 0) {
+        tipDiv.textContent = '✅ Ajout d’eau ' + fmt(percentWater,1) + ' % — zone généralement confortable.';
+        tipDiv.className = 'tip ok';
+      }
+    }
+
+    // ===== Sugars DIRECT (viser OG) — ✅ tuiles filtrées (pas de 0g) =====
+    function calculateSugarsDirect(){
+      var vEl = document.getElementById('volume');
+      var ogAS = document.getElementById('og-actuelle-sugar');
+      var ogTS = document.getElementById('og-visee-sugar');
+      var resultsDiv = document.getElementById('sugar-results');
+      if (!vEl || !ogAS || !ogTS || !resultsDiv) return;
+
+      var vL = parseVolumeInput(vEl.value);
+      var ogA = getOG_SG(ogAS.value);
+      var ogT = getOG_SG(ogTS.value);
+      var ptsA = isFinite(ogA) ? (ogA - 1) * 1000 : NaN;
+      var ptsT = isFinite(ogT) ? (ogT - 1) * 1000 : NaN;
+
+      // ✅ précision 0.1 pt (mieux sur gros volumes), affichage propre ensuite
+      var deltaPts = (isFinite(ptsA) && isFinite(ptsT)) ? Math.max(0, Math.round((ptsT - ptsA)*10)/10) : NaN;
+
+      if (!isVolumeInRange(vL) || !isOGInRange(ogA) || !isOGInRange(ogT) || !isFinite(deltaPts) || deltaPts <= 0) {
+        setPanelDisabled('panel-sugars-action', true);
+        resultsDiv.innerHTML = '<div class="alert">Renseigne volume (1 à 5000 L) + OG valides ('+getOGRangeText()+') avec OG visée > OG actuelle.</div>';
+        return;
+      }
+
+      var sSac = document.getElementById('slider-saccharose');
+      var sLac = document.getElementById('slider-lactose');
+      var sMdx = document.getElementById('slider-mdx');
+      var sDme = document.getElementById('slider-dme');
+      var sLme = document.getElementById('slider-lme');
+      var saccharose = sSac ? parseInt(sSac.value,10) : 0;
+      var lactose = sLac ? parseInt(sLac.value,10) : 0;
+      var mdx = sMdx ? parseInt(sMdx.value,10) : 0;
+      var dme = sDme ? parseInt(sDme.value,10) : 0;
+      var lme = sLme ? parseInt(sLme.value,10) : 0;
+
+      updateSliderLabel('slider-saccharose','value-saccharose');
+      updateSliderLabel('slider-lactose','value-lactose');
+      updateSliderLabel('slider-mdx','value-mdx');
+      updateSliderLabel('slider-dme','value-dme');
+      updateSliderLabel('slider-lme','value-lme');
+
+      var total = saccharose + lactose + mdx + dme + lme;
+      if (total <= 0) {
+        setPanelDisabled('panel-sugars-action', false);
+        resultsDiv.innerHTML = '<div class="alert">Définis au moins un ingrédient (slider > 0 %) pour calculer les masses.</div>';
+        return;
+      }
+      if (isSaccharoseUnlocked() && total !== 100) {
+        setPanelDisabled('panel-sugars-action', false);
+        resultsDiv.innerHTML = '<div class="alert">Mode manuel: mix total à '+total+'% — ajuste à 100% pour calculer les masses.</div>';
+        return;
+      }
+      setPanelDisabled('panel-sugars-action', false);
+
+      var mix = {
+        saccharose: saccharose/total,
+        lactose: lactose/total,
+        maltodextrine: mdx/total,
+        dme: dme/total,
+        lme: lme/total
+      };
+
+      var grams = {
+        saccharose: mix.saccharose * deltaPts * SUGAR_INFO.saccharose.gPerPtPerL * vL,
+        lactose: mix.lactose * deltaPts * SUGAR_INFO.lactose.gPerPtPerL * vL,
+        maltodextrine: mix.maltodextrine * deltaPts * SUGAR_INFO.maltodextrine.gPerPtPerL * vL,
+        dme: mix.dme * deltaPts * SUGAR_INFO.dme.gPerPtPerL * vL,
+        lme: mix.lme * deltaPts * SUGAR_INFO.lme.gPerPtPerL * vL
+      };
+      var totalGrams = grams.saccharose + grams.lactose + grams.maltodextrine + grams.dme + grams.lme;
+
+      var ptsFrom = {
+        saccharose: (grams.saccharose / SUGAR_INFO.saccharose.gPerPtPerL) / vL,
+        lactose: (grams.lactose / SUGAR_INFO.lactose.gPerPtPerL) / vL,
+        maltodextrine: (grams.maltodextrine / SUGAR_INFO.maltodextrine.gPerPtPerL) / vL,
+        dme: (grams.dme / SUGAR_INFO.dme.gPerPtPerL) / vL,
+        lme: (grams.lme / SUGAR_INFO.lme.gPerPtPerL) / vL
+      };
+      var fermPts = ptsFrom.saccharose * SUGAR_INFO.saccharose.ferm
+                  + ptsFrom.lactose * SUGAR_INFO.lactose.ferm
+                  + ptsFrom.maltodextrine * SUGAR_INFO.maltodextrine.ferm
+                  + ptsFrom.dme * SUGAR_INFO.dme.ferm
+                  + ptsFrom.lme * SUGAR_INFO.lme.ferm;
+      var deltaABV = fermPts * 0.131;
+
+      var compact = isMobileCompact();
+      var usedCount = 0;
+      if(shouldShowGrams(grams.saccharose)) usedCount++;
+      if(shouldShowGrams(grams.lactose)) usedCount++;
+      if(shouldShowGrams(grams.maltodextrine)) usedCount++;
+      if(shouldShowGrams(grams.dme)) usedCount++;
+      if(shouldShowGrams(grams.lme)) usedCount++;
+
+      // ✅ mobile compact: moins de cartes, details dans l'overlay
+      var tiles = '';
+      tiles += tile('Total à dissoudre', fmtGrams(totalGrams), 'Gain densité: ' + fmtDeltaDensity(ogA, ogT) + ' • ' + fmt(vL, 0) + ' L');
+      if(compact){
+        tiles += tile('Ingrédients actifs', String(usedCount) + ' / 5', 'Utilise le bouton Détails pour la liste complète.');
+        tiles += tile('ABV approx (ferment.)', '+ ' + fmt(deltaABV,2) + ' %', '');
+      }else{
+        if(shouldShowGrams(grams.saccharose))      tiles += tile('Sucre blanc', fmtGrams(grams.saccharose), fmt(mix.saccharose * 100, 0) + ' % du mix');
+        if(shouldShowGrams(grams.lactose))         tiles += tile('Lactose', fmtGrams(grams.lactose), fmt(mix.lactose * 100, 0) + ' % du mix');
+        if(shouldShowGrams(grams.maltodextrine))   tiles += tile('Maltodextrine', fmtGrams(grams.maltodextrine), fmt(mix.maltodextrine * 100, 0) + ' % du mix');
+        if(shouldShowGrams(grams.dme))             tiles += tile('Extrait sec (DME)', fmtGrams(grams.dme), fmt(mix.dme * 100, 0) + ' % du mix');
+        if(shouldShowGrams(grams.lme))             tiles += tile('Extrait liquide (LME)', fmtGrams(grams.lme), fmt(mix.lme * 100, 0) + ' % du mix');
+        tiles += tile('ABV approx (ferment.)', '+ ' + fmt(deltaABV,2) + ' %', 'Fermentescibilité : sacch 100%, DME 85%, LME 75%');
+      }
+
+      resultsDiv.innerHTML = '<div class="results-grid">'+tiles+'</div>';
+    }
+
+    // ===== Sugars INVERSE (grammes -> OG) — ✅ tuiles filtrées =====
+    function calculateSugarsInverse(){
+      var vEl = document.getElementById('volume');
+      var ogAEl = document.getElementById('og-actuelle-sugar');
+      var resultsDiv = document.getElementById('inverse-results');
+      if (!vEl || !ogAEl || !resultsDiv) return;
+
+      var vL = parseVolumeInput(vEl.value);
+      var ogA = getOG_SG(ogAEl.value);
+
+      if (!isVolumeInRange(vL) || !isOGInRange(ogA)) {
+        setPanelDisabled('panel-sugars-action', true);
+        resultsDiv.innerHTML = '<div class="alert">Renseigne un volume (1 à 5000 L) et une OG actuelle valide ('+getOGRangeText()+').</div>';
+        return;
+      }
+
+      function valOf(id){
+        var el=document.getElementById(id);
+        var raw = el ? String(el.value||'0').replace(',', '.') : '0';
+        var n = parseFloat(raw);
+        if(!isFinite(n)) return 0;
+        if(n < 0) return NaN;
+        if(n === 0) return 0;
+        if(n > LIMITS.gramsMax) return NaN;
+        return n;
+      }
+      var gSac = valOf('g-saccharose');
+      var gLac = valOf('g-lactose');
+      var gMdx = valOf('g-mdx');
+      var gDme = valOf('g-dme');
+      var gLme = valOf('g-lme');
+      if(!isFinite(gSac) || !isFinite(gLac) || !isFinite(gMdx) || !isFinite(gDme) || !isFinite(gLme)){
+        setPanelDisabled('panel-sugars-action', true);
+        resultsDiv.innerHTML = '<div class="alert">Certaines masses sont hors plage (0 à '+fmt(LIMITS.gramsMax,0)+' g).</div>';
+        return;
+      }
+
+      var totalAdded = gSac + gLac + gMdx + gDme + gLme;
+      if(totalAdded <= 0){
+        setPanelDisabled('panel-sugars-action', false);
+        resultsDiv.innerHTML = '<div class="alert">Renseigne des grammes pour estimer l’OG finale.</div>';
+        return;
+      }
+
+      var deltaPtsTotal = (
+        gSac / SUGAR_INFO.saccharose.gPerPtPerL +
+        gLac / SUGAR_INFO.lactose.gPerPtPerL +
+        gMdx / SUGAR_INFO.maltodextrine.gPerPtPerL +
+        gDme / SUGAR_INFO.dme.gPerPtPerL +
+        gLme / SUGAR_INFO.lme.gPerPtPerL
+      ) / vL;
+
+      var fermPts = (
+        (gSac / SUGAR_INFO.saccharose.gPerPtPerL) * SUGAR_INFO.saccharose.ferm +
+        (gLac / SUGAR_INFO.lactose.gPerPtPerL) * SUGAR_INFO.lactose.ferm +
+        (gMdx / SUGAR_INFO.maltodextrine.gPerPtPerL) * SUGAR_INFO.maltodextrine.ferm +
+        (gDme / SUGAR_INFO.dme.gPerPtPerL) * SUGAR_INFO.dme.ferm +
+        (gLme / SUGAR_INFO.lme.gPerPtPerL) * SUGAR_INFO.lme.ferm
+      ) / vL;
+      var deltaABV = fermPts * 0.131;
+
+      var ptsFinal = Math.round((((ogA - 1) * 1000 + deltaPtsTotal) * 10)) / 10;
+      var ogFinale = 1 + (ptsFinal / 1000);
+
+      setPanelDisabled('panel-sugars-action', false);
+
+      var compact = isMobileCompact();
+      var usedCount = 0;
+      if(shouldShowGrams(gSac)) usedCount++;
+      if(shouldShowGrams(gLac)) usedCount++;
+      if(shouldShowGrams(gMdx)) usedCount++;
+      if(shouldShowGrams(gDme)) usedCount++;
+      if(shouldShowGrams(gLme)) usedCount++;
+
+      // ✅ mobile compact: synthese d'abord, details ensuite via overlay
+      var tiles = '';
+      tiles += tile('OG finale estimée', fmtOG(ogFinale, true), 'Gain densité: ' + fmtDeltaDensity(ogA, ogFinale));
+      tiles += tile('Total ajouté', fmtGrams(totalAdded), 'sur ' + fmt(vL,0) + ' L');
+      if(compact){
+        tiles += tile('Ingrédients saisis', String(usedCount) + ' / 5', 'Utilise le bouton Détails pour la liste complète.');
+        tiles += tile('ABV approx (ferment.)', '+ ' + fmt(deltaABV,2) + ' %', '');
+      }else{
+        if(shouldShowGrams(gSac)) tiles += tile('Saccharose', fmtGrams(gSac), '');
+        if(shouldShowGrams(gLac)) tiles += tile('Lactose', fmtGrams(gLac), '');
+        if(shouldShowGrams(gMdx)) tiles += tile('Maltodextrine', fmtGrams(gMdx), '');
+        if(shouldShowGrams(gDme)) tiles += tile('DME', fmtGrams(gDme), '');
+        if(shouldShowGrams(gLme)) tiles += tile('LME', fmtGrams(gLme), '');
+        tiles += tile('ABV approx (ferment.)', '+ ' + fmt(deltaABV,2) + ' %', 'Fermentescibilité : sacch 100%, DME 85%, LME 75%');
+      }
+
+      resultsDiv.innerHTML = '<div class="results-grid">'+tiles+'</div>';
+    }
+
+    function toggleSugarMode(skipCalc){
+      var mode = 'direct';
+      var radios = document.getElementsByName('mode-sugar');
+      for (var i=0; i<radios.length; i++){ if (radios[i].checked) { mode = radios[i].value; break; } }
+      var ogTarGroup = document.getElementById('group-og-visee-sugar');
+      var directPanel = document.getElementById('mode-direct');
+      var inversePanel = document.getElementById('mode-inverse');
+      if(directPanel) directPanel.classList.toggle('is-panel-hidden', mode !== 'direct');
+      if(inversePanel) inversePanel.classList.toggle('is-panel-hidden', mode !== 'inverse');
+      if(ogTarGroup){
+        ogTarGroup.classList.toggle('is-hidden', mode !== 'direct');
+        ogTarGroup.setAttribute('aria-hidden', mode === 'direct' ? 'false' : 'true');
+      }
+      updateModeToggleState();
+      if(skipCalc) return;
+      calculate();
+    }
+
+    // ===== UI helpers =====
+    function activeTabName(){
+      var a = document.querySelector('.tab.active');
+      return a ? (a.getAttribute('data-tab') || 'dilution') : 'dilution';
+    }
+    function sugarMode(){
+      var r = document.querySelector('input[name=mode-sugar]:checked');
+      return r ? r.value : 'direct';
+    }
+    function updateModeBanner(){
+      var chip = document.getElementById('mode-chip');
+      var hint = document.getElementById('mode-hint');
+      if(!chip || !hint) return;
+      var m = sugarMode();
+      if(m === 'inverse'){
+        chip.innerHTML = 'Mode : <b>J’ajoute des grammes</b>';
+        hint.textContent = "Saisis tes grammes : l’outil estime l’OG finale et l’impact ABV.";
+      }else{
+        chip.innerHTML = 'Mode : <b>Je vise une OG</b>';
+        if(isSaccharoseUnlocked()) hint.textContent = "Règle ton mix : saccharose en manuel (mix total = 100% requis).";
+        else hint.textContent = "Règle ton mix : le saccharose se calibre automatiquement et l’outil calcule les grammes à dissoudre.";
+      }
+    }
+
+    function updateMixMeta(){
+      var bufEl = document.getElementById('mix-buffer');
+      var totalEl = document.getElementById('mix-total');
+      var helper = document.getElementById('mix-helper');
+      if(!bufEl || !totalEl) return;
+
+      var sSac = document.getElementById('slider-saccharose');
+      var sLac = document.getElementById('slider-lactose');
+      var sMdx = document.getElementById('slider-mdx');
+      var sDme = document.getElementById('slider-dme');
+      var sLme = document.getElementById('slider-lme');
+      if(!sSac || !sLac || !sMdx || !sDme || !sLme){ bufEl.textContent='—'; totalEl.textContent='—'; return; }
+
+      var a = parseInt(sSac.value||'0',10)||0;
+      var b = parseInt(sLac.value||'0',10)||0;
+      var c = parseInt(sMdx.value||'0',10)||0;
+      var d = parseInt(sDme.value||'0',10)||0;
+      var e = parseInt(sLme.value||'0',10)||0;
+      var sum = a+b+c+d+e;
+      var unlocked = isSaccharoseUnlocked();
+      var warnTotal = unlocked && sum !== 100;
+      var totalPill = (totalEl.closest ? totalEl.closest('.meta-pill') : null);
+      if(totalPill){ totalPill.classList.toggle('warn', warnTotal); }
+
+      bufEl.textContent = (unlocked ? 'manuel ' : '') + String(a) + '%';
+      totalEl.textContent = String(sum) + '%';
+      if(warnTotal){ totalEl.textContent += ' / 100%'; }
+
+      if(helper){
+        if(!unlocked){
+          helper.textContent = 'Les autres ingrédients montent, et le saccharose baisse automatiquement pour rester à 100%.';
+        }else if(warnTotal){
+          var gap = 100 - sum;
+          var fix = gap > 0 ? ('ajoute ' + gap + '%') : ('retire ' + Math.abs(gap) + '%');
+          helper.textContent = 'Mode manuel : total actuel ' + sum + '% (' + fix + ' pour revenir à 100%).';
+        }else{
+          helper.textContent = 'Mode manuel : les 5 sliders restent modifiables (total du mix = 100% requis).';
+        }
+      }
+    }
+
+    function setMsg(id, text, cls){
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.className = 'field-msg' + (cls ? (' ' + cls) : '');
+      el.textContent = text || '';
+    }
+    function markInput(id, state){
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.classList.remove('is-bad','is-warn');
+      if(state === 'bad') el.classList.add('is-bad');
+      if(state === 'warn') el.classList.add('is-warn');
+    }
+
+    function validateAllSoft(){
+      var vEl = document.getElementById('volume');
+      var vL = vEl ? parseVolumeInput(vEl.value) : NaN;
+      if(!isFinite(vL)){
+        markInput('volume','bad'); setMsg('msg-volume','Volume invalide (ex: 600).','bad');
+      }else if(vL < LIMITS.volumeMin || vL > LIMITS.volumeMax){
+        markInput('volume','bad'); setMsg('msg-volume','Volume hors plage ('+LIMITS.volumeMin+' à '+LIMITS.volumeMax+' L).','bad');
+      }else if(vL < 50){
+        markInput('volume','warn'); setMsg('msg-volume','Petit volume : ok, mais vérifie tes unités.','warn');
+      }else{
+        markInput('volume',''); setMsg('msg-volume','', '');
+      }
+
+      function checkOG(id, msgId){
+        var el = document.getElementById(id);
+        if(!el){ return {ok:false, val:NaN}; }
+        var og = parseOG(el.value);
+        if(!isFinite(og)){
+          markInput(id,'bad'); setMsg(msgId,'OG invalide ('+getOGExampleText()+').','bad'); return {ok:false, val:NaN};
+        }
+        if(!isOGInRange(og)){
+          markInput(id,'bad'); setMsg(msgId,'OG hors plage ('+getOGRangeText()+').','bad'); return {ok:false, val:og};
+        }
+        if(og < 1.000 || og > 1.120){
+          markInput(id,'warn'); setMsg(msgId,'OG atypique mais possible : vérifie la cible.','warn'); return {ok:true, val:og};
+        }
+        markInput(id,''); setMsg(msgId,'',''); return {ok:true, val:og};
+      }
+      function checkGram(id, msgId){
+        var el = document.getElementById(id);
+        if(!el){ return {ok:false, val:0}; }
+        var raw = String(el.value||'').trim().replace(',', '.');
+        if(raw === ''){
+          markInput(id,''); setMsg(msgId,'',''); return {ok:true, val:0};
+        }
+        var g = parseFloat(raw);
+        if(!isFinite(g)){
+          markInput(id,'bad'); setMsg(msgId,'Valeur invalide.','bad'); return {ok:false, val:NaN};
+        }
+        if(g < 0){
+          markInput(id,'bad'); setMsg(msgId,'Valeur >= 0 g requise.','bad'); return {ok:false, val:g};
+        }
+        if(g > LIMITS.gramsMax){
+          markInput(id,'bad'); setMsg(msgId,'Valeur trop grande (max '+fmt(LIMITS.gramsMax,0)+' g).','bad'); return {ok:false, val:g};
+        }
+        markInput(id,''); setMsg(msgId,'',''); return {ok:true, val:g};
+      }
+      function clearGramInputs(){
+        var ids = ['g-saccharose','g-lactose','g-mdx','g-dme','g-lme'];
+        var msgs = ['msg-g-saccharose','msg-g-lactose','msg-g-mdx','msg-g-dme','msg-g-lme'];
+        for(var i=0;i<ids.length;i++){ markInput(ids[i],''); }
+        for(var j=0;j<msgs.length;j++){ setMsg(msgs[j],'',''); }
+        setMsg('msg-grams-inverse','','');
+      }
+
+      var t = activeTabName();
+
+      if(t === 'dilution'){
+        var a = checkOG('og-actuelle','msg-og-actuelle');
+        var b = checkOG('og-visee','msg-og-visee');
+        if(a.ok && b.ok && isFinite(a.val) && isFinite(b.val)){
+          if(a.val <= b.val){
+            markInput('og-actuelle','bad');
+            markInput('og-visee','bad');
+            setMsg('msg-og-actuelle','En dilution, OG actuelle doit être > OG visée.','bad');
+            setMsg('msg-og-visee','En dilution, OG visée doit être < OG actuelle.','bad');
+          }
+        }
+        clearGramInputs();
+      } else {
+        var a2 = checkOG('og-actuelle-sugar','msg-og-actuelle-sugar');
+        if(sugarMode() === 'direct'){
+          var b2 = checkOG('og-visee-sugar','msg-og-visee-sugar');
+          if(a2.ok && b2.ok && isFinite(a2.val) && isFinite(b2.val)){
+            if(b2.val <= a2.val){
+              markInput('og-actuelle-sugar','bad');
+              markInput('og-visee-sugar','bad');
+              setMsg('msg-og-visee-sugar','En mode “je vise une OG”, OG visée doit être > OG actuelle.','bad');
+            }
+          }
+          clearGramInputs();
+        }else{
+          markInput('og-visee-sugar','');
+          setMsg('msg-og-visee-sugar','', '');
+          var g1 = checkGram('g-saccharose','msg-g-saccharose');
+          var g2 = checkGram('g-lactose','msg-g-lactose');
+          var g3 = checkGram('g-mdx','msg-g-mdx');
+          var g4 = checkGram('g-dme','msg-g-dme');
+          var g5 = checkGram('g-lme','msg-g-lme');
+          if(g1.ok && g2.ok && g3.ok && g4.ok && g5.ok){
+            var total = (g1.val||0) + (g2.val||0) + (g3.val||0) + (g4.val||0) + (g5.val||0);
+            if(total <= 0){
+              setMsg('msg-grams-inverse','Saisis au moins un ingrédient > 0 g.','warn');
+            }else{
+              setMsg('msg-grams-inverse','','');
+            }
+          }else{
+            setMsg('msg-grams-inverse','Corrige les valeurs invalides.','bad');
+          }
+        }
+      }
+    }
+
+    // ===== NEW: calculs "truth" pour sticky / overlay copy =====
+    function getVolumeL(){
+      var vEl = document.getElementById('volume');
+      var vL = vEl ? parseVolumeInput(vEl.value) : NaN;
+      return vL;
+    }
+
+    function getSugarsDirectPack(){
+      var vL = getVolumeL();
+      var ogA = parseOG((document.getElementById('og-actuelle-sugar')||{}).value);
+      var ogT = parseOG((document.getElementById('og-visee-sugar')||{}).value);
+      if(!isVolumeInRange(vL) || !isOGInRange(ogA) || !isOGInRange(ogT)) return { ok:false };
+
+      var dPts = Math.max(0, Math.round(((((ogT-1)*1000) - ((ogA-1)*1000))*10))/10);
+      if(dPts<=0) return { ok:false, reason:'no_delta', vL:vL, dPts:dPts, ogA:ogA, ogT:ogT };
+
+      function intVal(id){ var el=document.getElementById(id); return el ? (parseInt(el.value||'0',10)||0) : 0; }
+      var sac=intVal('slider-saccharose'), lac=intVal('slider-lactose'), mdx=intVal('slider-mdx'), dme=intVal('slider-dme'), lme=intVal('slider-lme');
+      var sum = sac+lac+mdx+dme+lme;
+      if(sum<=0) return { ok:false, reason:'no_mix', vL:vL, dPts:dPts, ogA:ogA, ogT:ogT };
+      if(isSaccharoseUnlocked() && sum !== 100) return { ok:false, reason:'mix_not_100', vL:vL, dPts:dPts, ogA:ogA, ogT:ogT, sum:sum };
+
+      var pSac=sac/sum, pLac=lac/sum, pMdx=mdx/sum, pDme=dme/sum, pLme=lme/sum;
+
+      var grams = {
+        saccharose: pSac*dPts*SUGAR_INFO.saccharose.gPerPtPerL*vL,
+        lactose: pLac*dPts*SUGAR_INFO.lactose.gPerPtPerL*vL,
+        maltodextrine: pMdx*dPts*SUGAR_INFO.maltodextrine.gPerPtPerL*vL,
+        dme: pDme*dPts*SUGAR_INFO.dme.gPerPtPerL*vL,
+        lme: pLme*dPts*SUGAR_INFO.lme.gPerPtPerL*vL
+      };
+      var gTotal = grams.saccharose+grams.lactose+grams.maltodextrine+grams.dme+grams.lme;
+
+      var ptsFrom = {
+        saccharose:(grams.saccharose / SUGAR_INFO.saccharose.gPerPtPerL)/vL,
+        lactose:(grams.lactose / SUGAR_INFO.lactose.gPerPtPerL)/vL,
+        maltodextrine:(grams.maltodextrine / SUGAR_INFO.maltodextrine.gPerPtPerL)/vL,
+        dme:(grams.dme / SUGAR_INFO.dme.gPerPtPerL)/vL,
+        lme:(grams.lme / SUGAR_INFO.lme.gPerPtPerL)/vL
+      };
+      var fermPts =
+        ptsFrom.saccharose*SUGAR_INFO.saccharose.ferm +
+        ptsFrom.lactose*SUGAR_INFO.lactose.ferm +
+        ptsFrom.maltodextrine*SUGAR_INFO.maltodextrine.ferm +
+        ptsFrom.dme*SUGAR_INFO.dme.ferm +
+        ptsFrom.lme*SUGAR_INFO.lme.ferm;
+      var deltaABV = fermPts * 0.131;
+
+      return {
+        ok:true,
+        vL:vL, ogA:ogA, ogT:ogT,
+        dPts:dPts,
+        grams:grams,
+        mix:{ saccharose:pSac, lactose:pLac, maltodextrine:pMdx, dme:pDme, lme:pLme },
+        gTotal:gTotal,
+        deltaABV:deltaABV
+      };
+    }
+
+    function getSugarsInversePack(){
+      var vL = getVolumeL();
+      var ogA = parseOG((document.getElementById('og-actuelle-sugar')||{}).value);
+      if(!isVolumeInRange(vL) || !isOGInRange(ogA)) return { ok:false };
+
+      function fval(id){
+        var el=document.getElementById(id);
+        var raw = el ? String(el.value||'0').replace(',', '.') : '0';
+        var n = parseFloat(raw);
+        if(!isFinite(n)) return 0;
+        if(n < 0) return NaN;
+        if(n === 0) return 0;
+        if(n > LIMITS.gramsMax) return NaN;
+        return n;
+      }
+      var gSac=fval('g-saccharose'), gLac=fval('g-lactose'), gMdx=fval('g-mdx'), gDme=fval('g-dme'), gLme=fval('g-lme');
+      if(!isFinite(gSac) || !isFinite(gLac) || !isFinite(gMdx) || !isFinite(gDme) || !isFinite(gLme)){
+        return { ok:false, reason:'invalid_grams', vL:vL, ogA:ogA };
+      }
+      var gAll = gSac+gLac+gMdx+gDme+gLme;
+      if(gAll<=0) return { ok:false, reason:'no_grams', vL:vL, ogA:ogA };
+
+      var deltaPtsTotal = (
+        gSac / SUGAR_INFO.saccharose.gPerPtPerL +
+        gLac / SUGAR_INFO.lactose.gPerPtPerL +
+        gMdx / SUGAR_INFO.maltodextrine.gPerPtPerL +
+        gDme / SUGAR_INFO.dme.gPerPtPerL +
+        gLme / SUGAR_INFO.lme.gPerPtPerL
+      ) / vL;
+
+      var fermPts = (
+        (gSac / SUGAR_INFO.saccharose.gPerPtPerL) * SUGAR_INFO.saccharose.ferm +
+        (gLac / SUGAR_INFO.lactose.gPerPtPerL) * SUGAR_INFO.lactose.ferm +
+        (gMdx / SUGAR_INFO.maltodextrine.gPerPtPerL) * SUGAR_INFO.maltodextrine.ferm +
+        (gDme / SUGAR_INFO.dme.gPerPtPerL) * SUGAR_INFO.dme.ferm +
+        (gLme / SUGAR_INFO.lme.gPerPtPerL) * SUGAR_INFO.lme.ferm
+      ) / vL;
+      var deltaABV = fermPts * 0.131;
+
+      var ptsFinal = Math.round((((ogA - 1) * 1000 + deltaPtsTotal) * 10)) / 10;
+      var ogFinale = 1 + (ptsFinal / 1000);
+
+      return {
+        ok:true,
+        vL:vL, ogA:ogA, ogFinale:ogFinale,
+        deltaPts:deltaPtsTotal,
+        grams:{ saccharose:gSac, lactose:gLac, maltodextrine:gMdx, dme:gDme, lme:gLme },
+        gTotal:gAll,
+        deltaABV:deltaABV
+      };
+    }
+
+    function getFirstBlockingFieldId(){
+      var vL = getVolumeL();
+      if(!isVolumeInRange(vL)) return 'volume';
+
+      var t = activeTabName();
+      if(t === 'dilution'){
+        var ogA = parseOG((document.getElementById('og-actuelle')||{}).value);
+        var ogT = parseOG((document.getElementById('og-visee')||{}).value);
+        if(!isOGInRange(ogA)) return 'og-actuelle';
+        if(!isOGInRange(ogT)) return 'og-visee';
+        if(ogA <= ogT) return 'og-visee';
+        return '';
+      }
+
+      var mode = sugarMode();
+      var ogAS = parseOG((document.getElementById('og-actuelle-sugar')||{}).value);
+      if(!isOGInRange(ogAS)) return 'og-actuelle-sugar';
+
+      if(mode === 'direct'){
+        var ogTS = parseOG((document.getElementById('og-visee-sugar')||{}).value);
+        if(!isOGInRange(ogTS) || ogTS <= ogAS) return 'og-visee-sugar';
+
+        function intVal(id){ var el=document.getElementById(id); return el ? (parseInt(el.value||'0',10)||0) : 0; }
+        var sum = intVal('slider-saccharose') + intVal('slider-lactose') + intVal('slider-mdx') + intVal('slider-dme') + intVal('slider-lme');
+        if(sum <= 0) return 'slider-lactose';
+        if(isSaccharoseUnlocked() && sum !== 100) return 'slider-saccharose';
+        return '';
+      }
+
+      function gramVal(id){
+        var el = document.getElementById(id);
+        var raw = el ? String(el.value||'0').replace(',', '.').trim() : '0';
+        if(raw === '') raw = '0';
+        return parseFloat(raw);
+      }
+      var gIds = ['g-saccharose','g-lactose','g-mdx','g-dme','g-lme'];
+      var total = 0;
+      for(var i=0;i<gIds.length;i++){
+        var g = gramVal(gIds[i]);
+        if(!isFinite(g) || g < 0 || g > LIMITS.gramsMax) return gIds[i];
+        total += g;
+      }
+      if(total <= 0) return 'g-saccharose';
+      return '';
+    }
+
+    function focusFieldById(id){
+      var el = document.getElementById(id);
+      if(!el) return false;
+      try{
+        var target = el;
+        if(el.closest){
+          var wrap = el.closest('.input-group') || el.closest('.slider-card');
+          if(wrap) target = wrap;
+        }
+        target.scrollIntoView({ behavior:'smooth', block:'center' });
+      }catch(e){}
+      try{ el.focus({ preventScroll:true }); }catch(e){ try{ el.focus(); }catch(x){} }
+      try{ el.classList.remove('snap'); void el.offsetWidth; el.classList.add('snap'); }catch(e){}
+      return true;
+    }
+
+    function focusFirstBlockingField(){
+      var id = getFirstBlockingFieldId();
+      if(!id) return false;
+      return focusFieldById(id);
+    }
+
+    // ===== Sticky (plus directive + boutons) =====
+    function updateSticky(){
+      var kicker = document.getElementById('sticky-kicker');
+      var main = document.getElementById('sticky-main');
+      var mini = document.getElementById('sticky-mini');
+      var dot = document.getElementById('sticky-dot');
+      var btnFix = document.getElementById('btn-fix');
+      var btnDetails = document.getElementById('btn-details');
+      var btnCopyMini = document.getElementById('btn-copy-mini');
+      if(!kicker || !main || !mini || !dot) return;
+
+      function hideBtn(btn){
+        if(!btn) return;
+        btn.classList.add('is-hidden');
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled', 'true');
+      }
+      function showBtn(btn){
+        if(!btn) return;
+        btn.classList.remove('is-hidden');
+        btn.disabled = false;
+        btn.setAttribute('aria-disabled', 'false');
+      }
+      function setPrimaryAction(kind){
+        hideBtn(btnFix);
+        hideBtn(btnDetails);
+        hideBtn(btnCopyMini);
+        if(kind === 'fix') showBtn(btnFix);
+        else if(kind === 'details') showBtn(btnDetails);
+      }
+
+      setPrimaryAction('');
+
+      dot.className = 'sticky-dot';
+      kicker.textContent = '—';
+      mini.textContent = '—';
+
+      var blockingId = '';
+      try{ blockingId = getFirstBlockingFieldId(); }catch(e){ blockingId = ''; }
+      if(blockingId) setPrimaryAction('fix');
+
+      var t = activeTabName();
+      var vL = getVolumeL();
+
+      if(!isFinite(vL) || vL <= 0){
+        kicker.textContent = 'Résumé';
+        main.textContent = 'Renseigne le volume.';
+        dot.classList.add('bad');
+        mini.textContent = '⚠️';
+        return;
+      }
+
+      if(t === 'dilution'){
+        kicker.textContent = 'Dilution';
+        var ogA = parseOG((document.getElementById('og-actuelle')||{}).value);
+        var ogT = parseOG((document.getElementById('og-visee')||{}).value);
+        if(!isFinite(ogA) || !isFinite(ogT)){
+          main.textContent = 'Renseigne OG actuelle + OG visée.';
+          dot.classList.add('bad'); mini.textContent = '⚠️';
+          return;
+        }
+        var ptsA = (ogA - 1) * 1000;
+        var ptsT = (ogT - 1) * 1000;
+        if(!(ptsA > 0 && ptsT > 0)){
+          main.textContent = 'OG invalides.';
+          dot.classList.add('bad'); mini.textContent = '⚠️';
+          return;
+        }
+        if(ptsA <= ptsT){
+          main.textContent = 'Pas de dilution (OG actuelle ≤ cible).';
+          dot.classList.add('warn'); mini.textContent = '—';
+          return;
+        }
+        var ratio = ptsA / ptsT;
+        var vFinal = vL * ratio;
+        var eau = vFinal - vL;
+        var pct = (eau / vFinal) * 100;
+
+        main.textContent = 'Ajouter ' + fmt(eau,2) + ' L d’eau pour un volume final de ' + fmt(vFinal,2) + ' L.';
+        mini.textContent = 'Ajout eau ' + fmt(pct,1) + '%';
+        if(pct >= 20){ dot.classList.add('bad'); }
+        else if(pct >= 10){ dot.classList.add('warn'); }
+        else { dot.classList.add('ok'); }
+        return;
+      }
+
+      var m = sugarMode();
+      if(m === 'direct'){
+        kicker.textContent = 'Enrichir (viser OG)';
+        var pack = getSugarsDirectPack();
+        if(!pack.ok){
+          if(pack.reason === 'mix_not_100') main.textContent = 'Mode manuel: mix à '+pack.sum+'% (vise 100%).';
+          else if(pack.reason === 'no_mix') main.textContent = 'Règle au moins un slider > 0 % pour calculer.';
+          else main.textContent = 'Renseigne OG actuelle + OG visée (visée > actuelle).';
+          dot.classList.add('warn'); mini.textContent = '—';
+          return;
+        }
+        if(!blockingId) setPrimaryAction('details');
+        main.textContent = 'Dissoudre : ' + fmtGrams(pack.gTotal);
+        dot.classList.add('ok');
+        mini.textContent = 'Gain densité ' + fmtDeltaDensity(pack.ogA, pack.ogT);
+        return;
+      }
+
+      kicker.textContent = 'Enrichir (grammes → OG)';
+      var inv = getSugarsInversePack();
+      if(!inv.ok){
+        if(inv.reason === 'invalid_grams') main.textContent = 'Corrige les grammes hors plage.';
+        else main.textContent = 'Renseigne des grammes pour estimer l’OG finale.';
+        dot.classList.add('warn');
+        mini.textContent = '—';
+        return;
+      }
+      if(!blockingId) setPrimaryAction('details');
+      main.textContent = 'OG finale ≈ ' + fmtOG(inv.ogFinale, true) + ' (Gain densité: ' + fmtDeltaDensity(inv.ogA, inv.ogFinale) + ')';
+      dot.classList.add('ok');
+      mini.textContent = fmtGrams(inv.gTotal);
+    }
+
+    // ===== Action UI (avec suggestion soft de tab) =====
+    function clearActionHighlights(){
+      var all = document.querySelectorAll('.info-tile.action');
+      for(var i=0;i<all.length;i++) all[i].classList.remove('action');
+    }
+    function highlightTileByTitle(containerId, wantedTitle){
+      var root = document.getElementById(containerId);
+      if(!root) return;
+      var titles = root.querySelectorAll('.info-tile-title');
+      for(var i=0;i<titles.length;i++){
+        var t = (titles[i].textContent||'').trim();
+        if(t === wantedTitle){
+          var tile = titles[i].closest('.info-tile');
+          if(tile) tile.classList.add('action');
+        }
+      }
+    }
+    function getActionStateMeta(cls){
+      var c = String(cls||'').toLowerCase();
+      if(c === 'bad') return { cls:'bad', label:'À corriger' };
+      if(c === 'warn') return { cls:'warn', label:'À compléter' };
+      return { cls:'ok', label:'Prêt' };
+    }
+    function renderActionCard(targetId, cls, kicker, main, sub, pillLabel, pillValue){
+      var host = document.getElementById(targetId);
+      if(!host) return;
+      if(!main){
+        host.innerHTML = '';
+        return;
+      }
+      var st = getActionStateMeta(cls);
+      host.innerHTML =
+        '<div class="action-card '+cls+'">'
+          + '<div class="action-left">'
+            + '<span class="action-dot"></span>'
+            + '<div class="action-text">'
+              + '<div class="action-head">'
+                + '<div class="action-kicker">'+kicker+'</div>'
+                + '<span class="action-state '+st.cls+'">'+st.label+'</span>'
+              + '</div>'
+              + '<p class="action-main">'+main+'</p>'
+              + (sub ? '<p class="action-sub">'+sub+'</p>' : '')
+            + '</div>'
+          + '</div>'
+          + '<div class="action-pill">'
+            + (pillLabel ? (pillLabel + ' ') : '')
+            + (pillValue ? '<span>'+pillValue+'</span>' : '')
+          + '</div>'
+        + '</div>';
+    }
+
+    function renderActionUI(){
+      clearActionHighlights();
+
+      (function(){
+        var hostId = 'action-card-dilution';
+        var t = activeTabName();
+        if(t !== 'dilution'){ renderActionCard(hostId,'','','','','',''); return; }
+
+        var vL = getVolumeL();
+        var ogA = parseOG((document.getElementById('og-actuelle')||{}).value);
+        var ogT = parseOG((document.getElementById('og-visee')||{}).value);
+
+        if(!isFinite(vL) || vL<=0 || !isFinite(ogA) || !isFinite(ogT)){
+          renderActionCard(hostId,'bad','À faire','Renseigne volume + OGs.', 'Puis l’outil te dira combien d’eau ajouter.', '','');
+          return;
+        }
+        var ptsA = (ogA-1)*1000;
+        var ptsT = (ogT-1)*1000;
+        if(!(ptsA>0 && ptsT>0)){
+          renderActionCard(hostId,'bad','À faire','OG invalides.', 'Format attendu : '+getOGExampleText()+'.', '','');
+          return;
+        }
+
+        // ✅ suggestion soft si mauvais onglet
+        if(ptsA <= ptsT){
+          renderActionCard(
+            hostId,'ok','Action',
+            'Rien à faire : pas de dilution.',
+            'Ça ressemble plutôt à un enrichissement → <button class="btn btn-ghost btn-small" type="button" onclick="switchTab(\'sugars\')">Passer sur Enrichir</button>',
+            'Statut','OK'
+          );
+          return;
+        }
+
+        var ratio = ptsA/ptsT;
+        var vFinal = vL*ratio;
+        var eau = vFinal - vL;
+        var pct = (eau / vFinal) * 100;
+
+        var cls = (pct >= 20) ? 'bad' : ((pct >= 10) ? 'warn' : 'ok');
+        var pctPillCls = (pct >= 20) ? 'bad' : ((pct >= 10) ? 'warn' : 'ok');
+        var sub = (pct >= 20)
+          ? ('Ajout d’eau '+pillNum(fmt(pct,1)+'%',pctPillCls)+' du volume final → attention, impact notable.')
+          : ((pct >= 10)
+            ? ('Ajout d’eau '+pillNum(fmt(pct,1)+'%',pctPillCls)+' du volume final → à surveiller.')
+            : ('Ajout d’eau '+pillNum(fmt(pct,1)+'%',pctPillCls)+' du volume final.'));
+        var main = 'Ajouter '+pillNum(fmt(eau,2)+' L', pctPillCls)+' d’eau (appoint).';
+
+        renderActionCard(hostId, cls, 'À faire', main, sub, 'Volume final', pillNum(fmt(vFinal,2)+' L','info'));
+        highlightTileByTitle('dilution-results','Eau à ajouter');
+      })();
+
+      (function(){
+        var hostId = 'action-card-sugars';
+        var t = activeTabName();
+        if(t !== 'sugars'){ renderActionCard(hostId,'','','','','',''); return; }
+
+        var mode = sugarMode();
+
+        if(mode === 'direct'){
+          var pack = getSugarsDirectPack();
+          if(!pack.ok){
+            if(pack.reason === 'mix_not_100') renderActionCard(hostId,'warn','À faire','Ajuste le mix total à 100 %.', 'Total actuel: '+pack.sum+'% (mode manuel).', '','');
+            else if(pack.reason === 'no_mix') renderActionCard(hostId,'warn','À faire','Règle au moins un slider > 0 %.', 'Le mix est vide, impossible de calculer les grammes.', '','');
+            else renderActionCard(hostId,'warn','À faire','Renseigne OG actuelle + OG visée (visée > actuelle).', 'Ensuite : ajuste ton mix.', '','');
+            return;
+          }
+          renderActionCard(
+            hostId,
+            'ok',
+            'À faire',
+            'Dissoudre '+pillNum(fmtGrams(pack.gTotal),'ok')+' au total.',
+            'Bouton “Détails” → uniquement les ingrédients nécessaires. “Copier” pour noter/envoyer.',
+            'Gain densité',
+            pillNum(fmtDeltaDensity(pack.ogA, pack.ogT),'info')
+          );
+          highlightTileByTitle('sugar-results','Total à dissoudre');
+          return;
+        }
+
+        var inv = getSugarsInversePack();
+        if(!inv.ok){
+          if(inv.reason === 'invalid_grams') renderActionCard(hostId,'bad','À corriger','Grammes hors plage.', 'Chaque ingrédient doit rester entre 0 et '+fmt(LIMITS.gramsMax,0)+' g.', '','');
+          else renderActionCard(hostId,'warn','À faire','Renseigne des grammes.', 'Puis l’outil estime l’OG finale.', 'Total', pillNum('0 g','info'));
+          return;
+        }
+
+        renderActionCard(
+          hostId,
+          'ok',
+          'Action',
+          'OG finale ≈ '+pillNum(fmtOG(inv.ogFinale, true),'info')+'.',
+          'Bouton “Détails” → uniquement ce qui est > 0 g. “Copier” pour garder le récap.',
+          'Total',
+          pillNum(fmtGrams(inv.gTotal),'ok')
+        );
+        highlightTileByTitle('inverse-results','OG finale estimée');
+      })();
+    }
+
+    // ===== Overlay controls + focus restore =====
+    var lastFocusEl = null;
+    var bodyLockScrollY = 0;
+    function lockBodyForOverlay(){
+      try{
+        bodyLockScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+        var b = document.body;
+        if(!b) return;
+        b.style.overflow = 'hidden';
+        b.style.position = 'fixed';
+        b.style.top = '-' + bodyLockScrollY + 'px';
+        b.style.left = '0';
+        b.style.right = '0';
+        b.style.width = '100%';
+      }catch(e){}
+    }
+    function unlockBodyForOverlay(){
+      try{
+        var b = document.body;
+        if(!b) return;
+        b.style.overflow = '';
+        b.style.position = '';
+        b.style.top = '';
+        b.style.left = '';
+        b.style.right = '';
+        b.style.width = '';
+        window.scrollTo(0, bodyLockScrollY || 0);
+      }catch(e){}
+    }
+
+    function openOverlay(){
+      var o=document.getElementById('overlay');
+      if(!o) return;
+      lastFocusEl = document.activeElement;
+      o.classList.add('is-open');
+      o.setAttribute('aria-hidden','false');
+      lockBodyForOverlay();
+      setTimeout(function(){
+        var ok = document.getElementById('btn-close-ok');
+        if(ok) ok.focus();
+      }, 0);
+    }
+    function closeOverlay(){
+      var o=document.getElementById('overlay');
+      if(!o) return;
+      o.classList.remove('is-open');
+      o.setAttribute('aria-hidden','true');
+      unlockBodyForOverlay();
+      setTimeout(function(){
+        try{
+          if(lastFocusEl && typeof lastFocusEl.focus === 'function') lastFocusEl.focus();
+          else {
+            var b=document.getElementById('btn-details');
+            if(b && !b.classList.contains('is-hidden') && !b.disabled) b.focus();
+          }
+        }catch(e){}
+      }, 0);
+    }
+    document.addEventListener('keydown', function(e){
+      var o=document.getElementById('overlay');
+      var isOpen = !!(o && o.classList.contains('is-open'));
+
+      if(e.key === 'Escape' && isOpen){
+        e.preventDefault();
+        closeOverlay();
+        return;
+      }
+      if(!isOpen || e.key !== 'Tab' || !o) return;
+
+      var focusables = o.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if(!focusables.length) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      var active = document.activeElement;
+
+      if(active && !o.contains(active)){
+        e.preventDefault();
+        first.focus();
+        return;
+      }
+      if(e.shiftKey && active === first){
+        e.preventDefault();
+        last.focus();
+      }else if(!e.shiftKey && active === last){
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    function detailRow(name, grams, frac, isRaw){
+      var g = isFinite(grams) ? grams : 0;
+      var pct = (typeof frac === 'number') ? (' • '+fmt(frac*100,0)+'%') : '';
+      var sub = isRaw ? '' : ('Part du mix'+pct);
+      return (
+        '<div class="detail-row">' +
+          '<div class="detail-top">' +
+            '<div class="detail-name">'+name+'</div>' +
+            '<div class="detail-g">'+fmtGrams(g)+'</div>' +
+          '</div>' +
+          (sub ? '<div class="detail-sub">'+sub+'</div>' : '') +
+        '</div>'
+      );
+    }
+
+    function openDetails(){
+      var t = activeTabName();
+      if(t !== 'sugars'){ return; }
+      var detailsBtn = document.getElementById('btn-details');
+      if(detailsBtn && detailsBtn.disabled){ return; }
+
+      var body = document.getElementById('sheet-body');
+      var title = document.getElementById('sheet-title');
+      if(!body || !title) return;
+
+      var mode = sugarMode();
+
+      if(mode === 'direct'){
+        var pack = getSugarsDirectPack();
+        title.textContent = 'Détails (viser OG)';
+        if(!pack.ok){
+          if(pack.reason === 'mix_not_100') body.innerHTML = '<div class="alert">Mode manuel: mix total à '+pack.sum+'% — ajuste à 100%.</div>';
+          else if(pack.reason === 'no_mix') body.innerHTML = '<div class="alert">Règle au moins un slider > 0 % pour calculer les masses.</div>';
+          else body.innerHTML = '<div class="alert">Renseigne OG actuelle + OG visée (visée > actuelle) + volume.</div>';
+          openOverlay(); return;
+        }
+
+        var rows = [];
+        if(shouldShowGrams(pack.grams.saccharose)) rows.push(detailRow('Sucre blanc (saccharose)', pack.grams.saccharose, pack.mix.saccharose));
+        if(shouldShowGrams(pack.grams.lactose)) rows.push(detailRow('Lactose', pack.grams.lactose, pack.mix.lactose));
+        if(shouldShowGrams(pack.grams.maltodextrine)) rows.push(detailRow('Maltodextrine', pack.grams.maltodextrine, pack.mix.maltodextrine));
+        if(shouldShowGrams(pack.grams.dme)) rows.push(detailRow('Extrait sec (DME)', pack.grams.dme, pack.mix.dme));
+        if(shouldShowGrams(pack.grams.lme)) rows.push(detailRow('Extrait liquide (LME)', pack.grams.lme, pack.mix.lme));
+
+        var rowsHtml = rows.length
+          ? ('<div class="detail-grid detail-grid--top">' + rows.join('') + '</div>')
+          : '<div class="alert alert-top">Aucun ingrédient à ajouter (tout est à 0 g).</div>';
+
+        body.innerHTML =
+          '<div class="detail-badges">' +
+            '<div class="badge">Gain densité <span>'+fmtDeltaDensity(pack.ogA, pack.ogT)+'</span></div>' +
+            '<div class="badge">Total <span>'+fmtGrams(pack.gTotal)+'</span></div>' +
+            '<div class="badge">ABV approx (ferment.) <span>+'+fmt(pack.deltaABV,2)+'%</span></div>' +
+          '</div>' +
+          rowsHtml;
+
+        openOverlay(); return;
+      }
+
+      var inv = getSugarsInversePack();
+      title.textContent = 'Détails (grammes → OG)';
+      if(!inv.ok){
+        if(inv.reason === 'invalid_grams') body.innerHTML = '<div class="alert">Grammes hors plage: corrige les valeurs (> '+fmt(LIMITS.gramsMax,0)+' g).</div>';
+        else body.innerHTML = '<div class="alert">Renseigne des grammes + OG actuelle + volume.</div>';
+        openOverlay(); return;
+      }
+
+      var rows2 = [];
+      if(shouldShowGrams(inv.grams.saccharose)) rows2.push(detailRow('Saccharose', inv.grams.saccharose, null, true));
+      if(shouldShowGrams(inv.grams.lactose)) rows2.push(detailRow('Lactose', inv.grams.lactose, null, true));
+      if(shouldShowGrams(inv.grams.maltodextrine)) rows2.push(detailRow('Maltodextrine', inv.grams.maltodextrine, null, true));
+      if(shouldShowGrams(inv.grams.dme)) rows2.push(detailRow('DME', inv.grams.dme, null, true));
+      if(shouldShowGrams(inv.grams.lme)) rows2.push(detailRow('LME', inv.grams.lme, null, true));
+
+      var rowsHtml2 = rows2.length
+        ? ('<div class="detail-grid detail-grid--top">' + rows2.join('') + '</div>')
+        : '<div class="alert alert-top">Aucun ingrédient saisi (tout est à 0 g).</div>';
+
+      body.innerHTML =
+        '<div class="detail-badges">' +
+          '<div class="badge">OG finale <span>'+fmtOG(inv.ogFinale, true)+'</span></div>' +
+          '<div class="badge">Gain densité <span>'+fmtDeltaDensity(inv.ogA, inv.ogFinale)+'</span></div>' +
+          '<div class="badge">Total <span>'+fmtGrams(inv.gTotal)+'</span></div>' +
+        '</div>' +
+        rowsHtml2;
+
+      openOverlay();
+    }
+
+    // ===== Copy (filtré) =====
+    function showToast(msg){
+      var t=document.getElementById('toast');
+      if(!t) return;
+      t.textContent = msg || 'Copié ✅';
+      t.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(function(){ t.classList.remove('show'); }, 1200);
+    }
+
+    function buildCopyText(){
+      var vL = getVolumeL();
+      var mode = sugarMode();
+
+      function line(s){ return String(s||''); }
+      var out = [];
+      out.push(line('PATOCHE — Détails enrichissement'));
+      if(isFinite(vL)) out.push(line('Volume : '+fmt(vL,0)+' L'));
+
+      var ogA = parseOG((document.getElementById('og-actuelle-sugar')||{}).value);
+      var ogT = parseOG((document.getElementById('og-visee-sugar')||{}).value);
+
+      if(mode === 'direct'){
+        var pack = getSugarsDirectPack();
+        if(!pack.ok){
+          if(pack.reason === 'mix_not_100') out.push(line('⚠️ Mode manuel : mix total à '+pack.sum+'% (viser 100%).'));
+          else if(pack.reason === 'no_mix') out.push(line('⚠️ Mix vide : règle au moins un slider > 0 %.'));
+          else out.push(line('⚠️ Données incomplètes (volume + OG actuelle + OG visée).'));
+          return out.join('\n');
+        }
+        out.push(line('Mode : viser OG'));
+        out.push(line('OG : '+fmtOG(pack.ogA, true)+' → '+fmtOG(pack.ogT, true)+'  (Gain densité: '+fmtDeltaDensity(pack.ogA, pack.ogT)+')'));
+        out.push(line('Total à dissoudre : '+fmtGrams(pack.gTotal)));
+        out.push(line('---'));
+
+        function pushIf(label, g, extra){
+          if(shouldShowGrams(g)) out.push(line(label+' : '+fmtGrams(g)+(extra||'')));
+        }
+        pushIf('Saccharose', pack.grams.saccharose, ' ('+fmt(pack.mix.saccharose*100,0)+'%)');
+        pushIf('Lactose', pack.grams.lactose, ' ('+fmt(pack.mix.lactose*100,0)+'%)');
+        pushIf('Maltodextrine', pack.grams.maltodextrine, ' ('+fmt(pack.mix.maltodextrine*100,0)+'%)');
+        pushIf('DME', pack.grams.dme, ' ('+fmt(pack.mix.dme*100,0)+'%)');
+        pushIf('LME', pack.grams.lme, ' ('+fmt(pack.mix.lme*100,0)+'%)');
+
+        out.push(line('ABV approx (fermentescible) : +'+fmt(pack.deltaABV,2)+'%'));
+        return out.join('\n');
+      }
+
+      var inv = getSugarsInversePack();
+      if(!inv.ok){
+        if(inv.reason === 'invalid_grams') out.push(line('⚠️ Grammes hors plage: corrige les valeurs au-dessus de '+fmt(LIMITS.gramsMax,0)+' g.'));
+        else out.push(line('⚠️ Données incomplètes (volume + OG actuelle + grammes).'));
+        return out.join('\n');
+      }
+      out.push(line('Mode : grammes → OG'));
+      if(isFinite(ogA)) out.push(line('OG départ : '+fmtOG(ogA, true)));
+      out.push(line('OG finale estimée : '+fmtOG(inv.ogFinale, true)+'  (Gain densité: '+fmtDeltaDensity(inv.ogA, inv.ogFinale)+')'));
+      out.push(line('Total ajouté : '+fmtGrams(inv.gTotal)));
+      out.push(line('---'));
+
+      function pushIf2(label, g){
+        if(shouldShowGrams(g)) out.push(line(label+' : '+fmtGrams(g)));
+      }
+      pushIf2('Saccharose', inv.grams.saccharose);
+      pushIf2('Lactose', inv.grams.lactose);
+      pushIf2('Maltodextrine', inv.grams.maltodextrine);
+      pushIf2('DME', inv.grams.dme);
+      pushIf2('LME', inv.grams.lme);
+
+      out.push(line('ABV approx (fermentescible) : +'+fmt(inv.deltaABV,2)+'%'));
+      return out.join('\n');
+    }
+
+    function writeClipboard(text){
+      if(navigator && navigator.clipboard && navigator.clipboard.writeText){
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise(function(resolve, reject){
+        try{
+          var ta=document.createElement('textarea');
+          ta.value=text;
+          ta.style.position='fixed';
+          ta.style.left='-9999px';
+          ta.setAttribute('readonly','');
+          document.body.appendChild(ta);
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          var ok=document.execCommand('copy');
+          document.body.removeChild(ta);
+          if(ok) resolve(); else reject(new Error('copy_failed'));
+        }catch(e){ reject(e); }
+      });
+    }
+
+    function copyDetails(){
+      var t = buildCopyText();
+      writeClipboard(t).then(function(){
+        showToast('Copié ✅');
+      }).catch(function(){
+        showToast('Copie impossible ⚠️');
+      });
+    }
+
+    function copyDetailsFromSticky(){
+      // ✅ sticky “Copier” : copie toujours le récap enrichissement (si possible)
+      copyDetails();
+    }
+
+    // ===== Init UX =====
+    function initUX(){
+      initTabKeyboard();
+      initFieldNormalizers();
+      initStepperHold();
+      showStepperHintOnce();
+      setSaccharoseLockUI();
+      var rs = document.getElementsByName('mode-sugar');
+      for(var i=0;i<rs.length;i++){
+        rs[i].addEventListener('change', function(){
+          try{ updateModeBanner(); updateModeToggleState(); updateSticky(); validateAllSoft(); renderActionUI(); }catch(e){}
+        });
+      }
+      enforceSugarBuffer();
+      updateModeToggleState();
+      renderActionUI();
+      if(!initUX._resizeBound){
+        initUX._resizeBound = true;
+        var rt = null;
+        window.addEventListener('resize', function(){
+          clearTimeout(rt);
+          rt = setTimeout(function(){ try{ calculate(); }catch(e){} }, 120);
+        });
+      }
+    }
+
+    // ===== Init =====
+    function init(){
+      applyCompactMode(false, { silent:true });
+      loadState();
+      calculate();
+      try{ initUX(); }catch(e){}
+    }
+  </script>
+</body>
+</html>

@@ -29,7 +29,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.buttonContainer}>
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => router.push('/correcteur')}
+          onPress={() => router.push('/density-correction')}
         >
           <ThemedView style={styles.buttonContent}>
             <ThemedText style={styles.buttonIcon}>💧</ThemedText>

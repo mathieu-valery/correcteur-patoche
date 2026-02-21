@@ -1,0 +1,4731 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Patoche – Correction d'eau</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Roboto+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* =========================
+   Patoche Water V3.3 — "ULTIME PATCH" 2026-02-15
+   ✅ Mobile prod: 1 écran = dKH → cibles → GROS Autofit → pesée
+   ✅ Validation compacte sticky (mobile) : statut + SO4/Cl/Alk toujours visibles
+   ✅ Dosages: résumé + drawer (détails), gain de place énorme
+   ✅ Presets: base vide par défaut (nouveaux users) + dropdown "charger preset" sous dKH (mode simple)
+   ✅ Un seul endroit pour caps: dans Avancé (drawer) + mini ⚙️ header qui ouvre directement bloc caps
+   ✅ Debounce input pour fluidité mobile
+   ✅ Desktop harmonisé (cards unifiées + layout plus logique)
+   ✅ Moteur/calcul inchangés (formules identiques)
+   ========================= */
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --font-ui:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+
+  --bg:#12141a;
+  --panel:#1a1d26;
+  --panel2:#171a22;
+  --stroke:rgba(255,255,255,.10);
+  --stroke2:rgba(255,255,255,.14);
+
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.68);
+  --muted2:rgba(255,255,255,.52);
+
+  --accent:#6ea8ff;
+  --accent2:#f0c46a;
+
+  --ok:#10b981;
+  --warn:#f59e0b;
+  --bad:#ef4444;
+
+  --shadow:0 10px 28px rgba(0,0,0,.35);
+  --shadow2:0 6px 16px rgba(0,0,0,.28);
+
+  --r-lg:18px;
+  --r-md:14px;
+  --r-sm:12px;
+
+  --focus:0 0 0 4px rgba(110,168,255,.18);
+}
+
+body{
+  font-family:var(--font-ui);
+  color:var(--text);
+  min-height:100vh;
+  padding:14px;
+  background:
+    radial-gradient(900px 500px at 18% 14%, rgba(110,168,255,.10), transparent 60%),
+    radial-gradient(900px 500px at 78% 26%, rgba(240,196,106,.08), transparent 60%),
+    linear-gradient(180deg, #12141a 0%, #0f1116 100%);
+}
+.container{max-width:1020px;margin:0 auto}
+
+/* Unified card system */
+.card, header, .summary-card, .dosage-section, .dosage-card, .slider-group{
+  background:linear-gradient(180deg, rgba(255,255,255,.035) 0%, rgba(255,255,255,.02) 100%);
+  border:1px solid var(--stroke);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow2);
+}
+.card{padding:16px}
+.card h2{
+  font-size:16px;
+  font-weight:900;
+  margin-bottom:12px;
+  color:rgba(255,255,255,.92);
+  display:flex;align-items:center;gap:8px;
+}
+.emoji{font-size:18px}
+
+/* HEADER */
+header{
+  padding:14px 16px;
+  margin-bottom:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border-color:var(--stroke2);
+}
+.header-left{flex:1;min-width:220px}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+h1{font-size:20px;font-weight:900;letter-spacing:-.02em;margin-bottom:2px}
+.subtitle{color:var(--muted);font-size:12.5px;line-height:1.25}
+
+/* Chips / badges */
+.pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid var(--stroke2);
+  background:rgba(0,0,0,.18);
+  box-shadow:var(--shadow2);
+  font-weight:900;
+  font-size:12px;
+  color:rgba(255,255,255,.86);
+  user-select:none;
+}
+.pill strong{font-family:var(--font-mono);font-size:12px}
+.pill .mini-gear{
+  margin-left:2px;
+  width:28px;height:28px;
+  display:grid;place-items:center;
+  border-radius:10px;
+  border:1px solid var(--stroke2);
+  background:rgba(255,255,255,.06);
+  cursor:pointer;
+  font-size:14px;
+}
+.pill .mini-gear:hover{border-color:rgba(110,168,255,.45)}
+.active-preset-badge{
+  padding:7px 10px;
+  background:rgba(110,168,255,.12);
+  color:rgba(255,255,255,.92);
+  border:1px solid rgba(110,168,255,.28);
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+}
+.active-preset-badge:hover{border-color:rgba(110,168,255,.45)}
+.is-hidden{display:none}
+.status-badge{
+  padding:8px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--stroke2);
+  background:rgba(0,0,0,.18);
+}
+.status-badge.needs-adjustment{border-color:rgba(239,68,68,.32)}
+.status-badge.almost-ready{border-color:rgba(245,158,11,.35)}
+.status-badge.ready{border-color:rgba(16,185,129,.35)}
+
+/* Buttons */
+.btn{
+  padding:9px 11px;
+  border:1px solid var(--stroke2);
+  border-radius:12px;
+  background:rgba(0,0,0,.18);
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  transition:transform .12s, border-color .12s, filter .12s;
+  color:rgba(255,255,255,.90);
+}
+.btn:hover{border-color:rgba(110,168,255,.42);transform:translateY(-1px)}
+.btn.is-locked{
+  opacity:.72;
+  border-style:dashed;
+}
+.btn.is-locked:hover{
+  opacity:.88;
+  transform:none;
+}
+.btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  transform:none !important;
+}
+.history-btn{
+  padding:7px 10px;
+  font-size:12px;
+  min-height:34px;
+}
+.history-toolbar{
+  display:flex;
+  gap:8px;
+  margin:0 0 10px;
+  padding:8px;
+  border:1px solid var(--stroke);
+  border-radius:12px;
+  background:rgba(255,255,255,.03);
+}
+.history-toolbar .btn{flex:1}
+.btn-primary{
+  background:linear-gradient(180deg, rgba(110,168,255,.22), rgba(110,168,255,.10));
+  border:1px solid rgba(110,168,255,.34);
+}
+.btn-warm{
+  background:linear-gradient(180deg, rgba(240,196,106,.20), rgba(240,196,106,.09));
+  border:1px solid rgba(240,196,106,.35);
+}
+.btn-warm:hover{filter:brightness(1.03)}
+.btn-dosage-target{
+  background:linear-gradient(180deg, rgba(82,164,255,.32), rgba(82,164,255,.14));
+  border:1px solid rgba(82,164,255,.58);
+  color:rgba(255,255,255,.97);
+  box-shadow:0 0 0 1px rgba(82,164,255,.18) inset, 0 10px 24px rgba(28,99,205,.24);
+}
+.btn-dosage-target:hover{
+  border-color:rgba(134,194,255,.80);
+  filter:brightness(1.04);
+}
+.dock-btn.primary.btn-dosage-target{
+  background:linear-gradient(180deg, rgba(82,164,255,.30), rgba(82,164,255,.12));
+  border-color:rgba(82,164,255,.58);
+}
+@keyframes dosage-cta-pulse{
+  0%,100%{
+    transform:translateY(0);
+    box-shadow:0 0 0 0 rgba(82,164,255,0);
+  }
+  50%{
+    transform:translateY(-1px);
+    box-shadow:0 0 0 8px rgba(82,164,255,.14);
+  }
+}
+.btn-cta-pulse{
+  animation:dosage-cta-pulse .92s ease-in-out 2;
+}
+.btn-subhelp{margin-top:8px;font-size:11px;color:var(--muted2);line-height:1.4}
+
+/* Workflow strip (desktop ok, mobile compact) */
+.workflow-strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+.workflow-step{
+  border:1px solid var(--stroke);
+  border-radius:12px;
+  background:rgba(0,0,0,.18);
+  padding:9px 10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.workflow-step .num{
+  width:22px;height:22px;border-radius:8px;
+  border:1px solid rgba(110,168,255,.35);
+  background:rgba(110,168,255,.14);
+  display:grid;place-items:center;
+  font-family:var(--font-mono);
+  font-size:11px;font-weight:900;flex:0 0 auto;
+}
+.workflow-step .txt{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+}
+.workflow-step strong{
+  display:block;
+  font-size:11.5px;
+  font-weight:900;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.workflow-step small{
+  display:block;
+  font-size:10.5px;
+  color:var(--muted2);
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Layout */
+.main-grid{display:grid;gap:12px;margin-bottom:12px}
+@media(min-width:920px){
+  .main-grid{grid-template-columns:minmax(360px,.95fr) minmax(460px,1.05fr)}
+  header{
+    position:sticky;
+    top:8px;
+    z-index:40;
+    backdrop-filter:blur(10px);
+  }
+}
+.operations-stack{display:grid;gap:12px}
+.section-intro{font-size:12px;color:var(--muted);line-height:1.35;margin:-4px 0 12px}
+#cardMeasure,#cardQuickRead,#cardAction{border-color:var(--stroke2)}
+#cardMeasure .section-intro,#cardAction .section-intro{
+  font-size:11.5px;
+  margin:-2px 0 10px;
+}
+#cardQuickRead .summary-title{margin-bottom:8px}
+#cardQuickRead .summary-note{font-size:10.5px}
+
+/* Summary card */
+.summary-card{padding:12px;border-color:var(--stroke2)}
+.summary-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.summary-title h2{font-size:14px;font-weight:900;display:flex;align-items:center;gap:8px}
+.summary-tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.summary-note{font-size:11px;color:var(--muted2);line-height:1.2;text-align:right}
+.summary-grid{display:grid;grid-template-columns: repeat(4, minmax(0,1fr));gap:10px}
+@media(max-width:820px){.summary-grid{grid-template-columns: repeat(2, minmax(0,1fr));}}
+.quickread-compact{
+  display:none;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  border:1px solid var(--stroke);
+  border-radius:12px;
+  background:rgba(0,0,0,.16);
+  padding:8px 10px;
+  font-family:var(--font-mono);
+  font-weight:900;
+  font-size:12px;
+  color:rgba(255,255,255,.88);
+  cursor:pointer;
+}
+.quickread-compact b{color:rgba(255,255,255,.95)}
+.quickread-compact .hint{
+  margin-left:auto;
+  font-size:10.5px;
+  color:var(--muted2);
+  font-weight:800;
+}
+.quick-minerals-toggle{
+  border:1px solid var(--stroke2);
+  border-radius:999px;
+  padding:4px 9px;
+  background:rgba(255,255,255,.04);
+  color:var(--muted);
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.quick-minerals-toggle:hover{border-color:rgba(110,168,255,.35);color:rgba(255,255,255,.90)}
+.quick-minerals-toggle.is-active{
+  border-color:rgba(110,168,255,.35);
+  background:rgba(110,168,255,.10);
+  color:rgba(255,255,255,.92);
+}
+.quick-minerals-row{margin-top:10px}
+.quick-minerals-row[hidden]{display:none !important}
+.summary-box{
+  border:1px solid var(--stroke);
+  border-radius:14px;
+  background:rgba(0,0,0,.18);
+  padding:10px 12px;
+  min-width:0;
+}
+.summary-box.clickable{cursor:pointer;transition:transform .08s, border-color .12s, background .12s;user-select:none}
+.summary-box.clickable:hover{border-color:rgba(110,168,255,.40);transform:translateY(-1px)}
+.summary-k{font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);font-size:10.5px;white-space:nowrap}
+.summary-v{margin-top:6px;font-family:var(--font-mono);font-weight:900;font-size:22px;color:rgba(255,255,255,.94);white-space:nowrap}
+.summary-sub{margin-top:6px;display:flex;justify-content:space-between;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--muted);align-items:center}
+.summary-sub .diff{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.summary-sub .diff.good{color:rgba(16,185,129,.95)}
+.summary-sub .diff.warning{color:rgba(245,158,11,.95)}
+.summary-sub .diff.bad{color:rgba(239,68,68,.95)}
+.summary-unit{
+  font-size:12px;
+  color:var(--muted2);
+  font-family:var(--font-mono);
+}
+.ratio-word{
+  font-weight:900;font-size:15px;color:rgba(255,255,255,.92);line-height:1.05;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;text-overflow:ellipsis;white-space:normal;
+}
+.ratio-value{margin-top:6px;font-family:var(--font-mono);font-size:22px;font-weight:900}
+.ratio-sub{margin-top:6px;font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.72);display:flex;justify-content:space-between;gap:10px}
+.ratio-sub .hint{color:rgba(255,255,255,.62)}
+
+/* Inputs */
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:6px}
+.input-group input[type="number"], .preset-input-group input[type="text"], .selectlike{
+  width:100%;padding:10px 12px;border:1px solid var(--stroke2);border-radius:12px;
+  font-size:16px;background:rgba(0,0,0,.20);color:rgba(255,255,255,.92);
+  transition:border-color .12s, box-shadow .12s;
+}
+.input-group input[type="number"]:focus, .preset-input-group input[type="text"]:focus, .selectlike:focus{
+  outline:none;border-color:rgba(110,168,255,.55);box-shadow:var(--focus);
+}
+.input-group input[readonly]{opacity:.85;cursor:not-allowed}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stepper{
+  position:relative;
+  border:1px solid var(--stroke2);
+  border-radius:12px;
+  background:rgba(0,0,0,.20);
+  transition:border-color .12s, box-shadow .12s, background .12s;
+}
+.stepper:focus-within{
+  border-color:rgba(110,168,255,.45);
+  box-shadow:var(--focus);
+  background:rgba(0,0,0,.24);
+}
+.stepper-btn{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:1;
+  width:30px;
+  min-height:30px;
+  height:30px;
+  padding:0;
+  border-radius:9px;
+  border:1px solid transparent;
+  background:rgba(255,255,255,.02);
+  color:var(--muted2);
+  font-size:14px;
+  font-weight:900;
+  line-height:1;
+  display:grid;
+  place-items:center;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+  will-change:background-color, box-shadow, border-color;
+}
+.stepper-btn[data-dir="-1"]{left:5px}
+.stepper-btn[data-dir="1"]{right:5px}
+.stepper-btn:hover{
+  transform:translateY(-50%);
+  background:rgba(110,168,255,.10);
+  color:rgba(255,255,255,.90);
+  border-color:rgba(110,168,255,.22);
+}
+.stepper-btn:active{
+  transform:translateY(-50%) scale(.96);
+  background:rgba(110,168,255,.16);
+}
+.stepper-btn.is-holding{
+  transform:translateY(-50%);
+  border-color:rgba(110,168,255,.35);
+  color:rgba(255,255,255,.95);
+  animation:stepper-hold-pulse .78s ease-in-out infinite;
+}
+.stepper-btn.is-holding:active{transform:translateY(-50%)}
+@keyframes stepper-hold-pulse{
+  0%,100%{
+    background:rgba(110,168,255,.14);
+    box-shadow:0 0 0 0 rgba(110,168,255,.00);
+  }
+  50%{
+    background:rgba(110,168,255,.22);
+    box-shadow:0 0 0 4px rgba(110,168,255,.12);
+  }
+}
+.stepper input[type="number"].stepper-input{
+  width:100%;
+  min-height:40px;
+  text-align:center;
+  font-family:var(--font-mono);
+  font-weight:900;
+  font-size:15.5px;
+  letter-spacing:.01em;
+  padding:8px 40px;
+  border:0;
+  border-radius:12px;
+  background:transparent;
+  box-shadow:none;
+  outline:none;
+  color:rgba(255,255,255,.92);
+}
+.stepper input[type="number"].stepper-input:focus{
+  border:0;
+  box-shadow:none;
+}
+.stepper input[type="number"].stepper-input::-webkit-outer-spin-button,
+.stepper input[type="number"].stepper-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+.stepper input[type="number"].stepper-input{
+  -moz-appearance:textfield;
+}
+.quick-secondary-toggle{
+  border:1px solid var(--stroke2);
+  border-radius:999px;
+  padding:5px 9px;
+  background:rgba(255,255,255,.04);
+  color:var(--muted);
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+}
+.quick-secondary-toggle:hover{border-color:rgba(110,168,255,.35);color:rgba(255,255,255,.90)}
+.quick-secondary-targets{
+  margin-top:8px;
+  padding:10px;
+  border:1px dashed var(--stroke2);
+  border-radius:12px;
+  background:rgba(0,0,0,.14);
+}
+.quick-secondary-targets[hidden]{display:none !important}
+.preset-badge{
+  display:inline-block;padding:3px 8px;background:rgba(255,255,255,.06);color:var(--muted2);
+  border:1px solid var(--stroke);border-radius:999px;font-size:10.5px;font-weight:900;margin-left:8px;
+}
+.preset-input-group,
+.custom-presets{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.preset-input-group{margin-bottom:10px}
+.preset-pill{
+  cursor:pointer;
+  border-color:rgba(110,168,255,.28);
+  align-items:flex-start;
+}
+.preset-pill.is-editing{border-color:rgba(245,158,11,.60)}
+.preset-pill-main{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:150px;
+}
+.preset-pill-meta{
+  font-family:var(--font-mono);
+  font-size:11px;
+  opacity:.75;
+}
+.preset-pill-actions{
+  display:flex;
+  gap:6px;
+  margin-left:auto;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.preset-pill-action{
+  padding:5px 9px;
+  border-radius:999px;
+  margin-left:0;
+  font-size:10.8px;
+  min-height:30px;
+  line-height:1;
+}
+.preset-pill-action.danger{border-color:rgba(239,68,68,.45)}
+.preset-editor-state{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+  padding:8px 10px;
+  border:1px dashed rgba(245,158,11,.45);
+  border-radius:12px;
+  background:rgba(245,158,11,.08);
+  color:rgba(255,255,255,.90);
+  font-size:12px;
+}
+.preset-editor-state[hidden]{display:none !important}
+.preset-editor-state strong{font-size:11.5px}
+.preset-editor-name{
+  font-family:var(--font-mono);
+  font-weight:900;
+  color:rgba(255,255,255,.95);
+}
+.preset-editor-state .btn{
+  margin-left:auto;
+  min-height:30px;
+  padding:6px 10px;
+  font-size:11.5px;
+}
+.preset-editor-tools{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:10px;
+}
+.preset-editor-tools .btn{
+  min-height:30px;
+  padding:6px 10px;
+  font-size:11.5px;
+}
+
+/* Utilities */
+.u-h-6{height:6px}
+.u-m-0{margin:0}
+.u-mb-0{margin-bottom:0}
+.u-mb-10{margin-bottom:10px}
+.u-mb-12{margin-bottom:12px}
+.u-mt-2{margin-top:2px}
+.u-mt-10{margin-top:10px}
+.u-mt-12{margin-top:12px}
+.u-mt-neg-4{margin-top:-4px}
+.u-minw-250{min-width:250px}
+.u-flex-wrap{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.u-row-end{
+  display:flex;
+  justify-content:flex-end;
+}
+.u-text-right{text-align:right}
+.u-opacity-70{opacity:.7}
+.subsection-title{
+  font-size:14.5px;
+  margin-bottom:10px;
+}
+
+/* Locks */
+.lock-row{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
+.lock{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;
+  border:1px solid var(--stroke2);background:rgba(0,0,0,.22);cursor:pointer;user-select:none;
+  font-weight:900;font-size:12px;color:rgba(255,255,255,.85);
+}
+.lock input{accent-color: var(--accent)}
+.lock small{font-weight:700;color:var(--muted2)}
+
+/* Sliders */
+.slider-group{margin-bottom:12px;padding:10px 12px;border-radius:14px;border:1px solid var(--stroke);background:rgba(0,0,0,.18)}
+.slider-group.warn{border-color:rgba(245,158,11,.55)}
+.slider-group.danger{border-color:rgba(239,68,68,.55)}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
+.slider-label{font-size:12.8px;font-weight:900;color:var(--muted)}
+.slider-value{font-size:13px;font-weight:900;min-width:136px;text-align:right;font-family:var(--font-mono)}
+input[type="range"]{width:100%;height:10px;border-radius:999px;background:rgba(255,255,255,.10);outline:none;-webkit-appearance:none}
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;
+  background:rgba(255,255,255,.85);cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.38);
+  border:2px solid rgba(110,168,255,.35);
+}
+input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.85);cursor:pointer;border:none;box-shadow:0 6px 14px rgba(0,0,0,.38)}
+.adjust-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(0,.9fr);
+  gap:12px;
+  align-items:start;
+}
+.adjust-controls{min-width:0}
+.adjust-impact{
+  border:1px solid var(--stroke);
+  border-radius:16px;
+  background:rgba(0,0,0,.20);
+  padding:12px;
+  position:sticky;
+  top:0;
+}
+.adjust-impact h4{
+  font-size:12.5px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+.adjust-impact-note{
+  font-size:11px;
+  color:var(--muted2);
+  line-height:1.35;
+  margin-bottom:10px;
+}
+.adjust-impact-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.adjust-impact-card{
+  border:1px solid var(--stroke);
+  border-radius:12px;
+  background:rgba(255,255,255,.03);
+  padding:8px;
+}
+.adjust-impact-card .k{
+  font-size:10.5px;
+  color:var(--muted2);
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  margin-bottom:5px;
+}
+.adjust-impact-row{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  font-size:10.8px;
+  margin-top:4px;
+}
+.adjust-impact-row span:first-child{color:var(--muted2)}
+.adjust-impact-row .v{
+  font-family:var(--font-mono);
+  font-weight:900;
+  color:rgba(255,255,255,.90);
+}
+.adjust-impact-row .delta{
+  font-family:var(--font-mono);
+  font-weight:900;
+}
+.adjust-impact-row .delta.plus{color:rgba(110,168,255,.95)}
+.adjust-impact-row .delta.minus{color:rgba(245,158,11,.95)}
+.adjust-impact-row .delta.zero{color:var(--muted2)}
+.adjust-impact-row .gap{
+  font-family:var(--font-mono);
+  font-weight:900;
+}
+.adjust-impact-row .gap.good{color:rgba(16,185,129,.95)}
+.adjust-impact-row .gap.warning{color:rgba(245,158,11,.95)}
+.adjust-impact-row .gap.bad{color:rgba(239,68,68,.95)}
+.adjust-impact-mini{
+  margin-top:10px;
+  border:1px dashed var(--stroke2);
+  border-radius:10px;
+  padding:8px 9px;
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  color:rgba(255,255,255,.78);
+  line-height:1.35;
+}
+@media(max-width:900px){
+  .adjust-layout{grid-template-columns:1fr}
+  .adjust-impact{position:static}
+  .adjust-impact-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .adjust-impact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* Notification */
+.notification{
+  position:fixed;top:14px;right:14px;
+  background:rgba(15, 18, 26, 0.92);
+  color:rgba(255,255,255,0.92);
+  padding:14px 16px;border-radius:14px;
+  box-shadow:0 14px 40px rgba(0,0,0,.55);
+  z-index:5000;
+  max-width:560px;
+  border:1px solid var(--stroke2);
+  border-left:4px solid rgba(110,168,255,.75);
+  white-space:pre-line;
+}
+.notification.success{border-left-color:rgba(16,185,129,.95)}
+.notification.warning{border-left-color:rgba(245,158,11,.95)}
+.notification.error{border-left-color:rgba(239,68,68,.95)}
+.notification-title{font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.notification-body{font-size:12.8px;color:rgba(255,255,255,.75);line-height:1.45}
+.notification-close{
+  position:absolute;top:6px;right:10px;cursor:pointer;color:rgba(255,255,255,.45);
+  font-size:20px;line-height:1;padding:4px;border:none;background:transparent;
+}
+.notification-close:hover{color:rgba(255,255,255,.86)}
+
+/* -------- Mode Balance (plein écran) -------- */
+.weigh-screen{
+  position:fixed;inset:0;z-index:6000;display:none;
+  background:#0f1116;padding:18px 18px 22px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;touch-action:pan-y;max-height:100vh;
+}
+body.weigh-mode .weigh-screen{display:block}
+body.weigh-mode .container{display:none}
+body.weigh-mode{overflow:hidden;}
+.weigh-header{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;
+  position:sticky;top:0;z-index:10;padding-bottom:12px;background:#0f1116;
+}
+.weigh-title{font-weight:900;letter-spacing:-.02em;font-size:24px}
+.weigh-sub{font-family:var(--font-mono);color:rgba(255,255,255,.70);font-size:14px;margin-top:4px;white-space:pre-wrap}
+.weigh-exit{
+  padding:12px 14px;border-radius:14px;border:1px solid var(--stroke2);
+  background:rgba(255,255,255,.06);color:rgba(255,255,255,.92);font-weight:900;cursor:pointer;
+}
+.weigh-exit:hover{border-color:rgba(110,168,255,.45)}
+.weigh-grid{display:grid;gap:16px;grid-template-columns: 1fr 1fr}
+@media(max-width:900px){.weigh-grid{grid-template-columns:1fr}}
+.weigh-card{border-radius:22px;border:1px solid var(--stroke);background: rgba(255,255,255,.04);padding:18px}
+.weigh-card h2{font-size:20px;font-weight:900;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.weigh-list{display:flex;flex-direction:column;gap:12px}
+.weigh-item{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.22);
+}
+.weigh-left{display:flex;align-items:center;gap:14px;min-width:0}
+.weigh-check{
+  width:34px;height:34px;border-radius:10px;border:2px solid rgba(255,255,255,.18);
+  display:grid;place-items:center;cursor:pointer;user-select:none;flex:0 0 auto;background:transparent;color:inherit;
+}
+.weigh-check[data-checked="1"]{border-color: rgba(16,185,129,.75);background: rgba(16,185,129,.18)}
+.weigh-check:disabled{opacity:.35;cursor:not-allowed}
+.weigh-name{font-weight:900;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.weigh-val{font-family:var(--font-mono);font-weight:900;font-size:40px;letter-spacing:-.02em;text-align:right;flex:0 0 auto}
+.weigh-unit{font-family:var(--font-mono);font-size:14px;color:rgba(255,255,255,.65);margin-left:8px;font-weight:800}
+.weigh-meta{
+  margin-top:12px;border-radius:18px;border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.20);padding:14px;color:rgba(255,255,255,.78);
+  font-family:var(--font-mono);font-size:13px;line-height:1.4;white-space:pre-line;
+}
+
+/* -------------------------
+   DRAWERS (Avancé / Dosages)
+-------------------------- */
+.drawer-overlay{
+  position:fixed;inset:0;z-index:7000;
+  background:rgba(0,0,0,.55);
+  display:none;
+  padding:14px;
+}
+.drawer{
+  max-width:860px;margin:0 auto;
+  border-radius:22px;
+  border:1px solid var(--stroke2);
+  background:linear-gradient(180deg, rgba(26,29,38,.98), rgba(18,20,26,.98));
+  box-shadow:0 18px 60px rgba(0,0,0,.65);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  max-height:92vh;
+}
+.drawer-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-bottom:1px solid var(--stroke);
+  background:rgba(0,0,0,.22);
+}
+.drawer-title{font-weight:900;font-size:14px;display:flex;align-items:center;gap:8px}
+.drawer-close{
+  width:40px;height:40px;border-radius:14px;border:1px solid var(--stroke2);
+  background:rgba(255,255,255,.06);color:rgba(255,255,255,.92);
+  font-weight:900;cursor:pointer;
+}
+.drawer-close:hover{border-color:rgba(110,168,255,.45)}
+.drawer-body{
+  padding:14px;
+  max-height:none;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  min-height:0;
+  flex:1;
+}
+.drawer-foot{
+  display:none;
+  gap:8px;
+  padding:10px 14px;
+  border-top:1px solid var(--stroke);
+  background:rgba(0,0,0,.22);
+}
+#advancedDrawer .drawer-foot{
+  display:flex;
+  flex-wrap:wrap;
+}
+#advancedDrawer .drawer-foot .btn{
+  flex:1 1 180px;
+}
+.drawer-section{
+  border:1px solid var(--stroke);
+  border-radius:18px;
+  background:rgba(0,0,0,.18);
+  padding:14px;
+  margin-bottom:12px;
+}
+.drawer-section h3{
+  font-size:14px;font-weight:900;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.adv-accordion{
+  border:1px solid var(--stroke);
+  border-radius:18px;
+  background:rgba(0,0,0,.18);
+  margin-bottom:12px;
+  overflow:hidden;
+}
+.adv-accordion summary{
+  list-style:none;
+  cursor:pointer;
+  padding:12px 14px;
+  font-size:14px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:rgba(0,0,0,.20);
+  border-bottom:1px solid transparent;
+}
+.adv-accordion summary::-webkit-details-marker{display:none}
+.adv-accordion[open] summary{border-bottom-color:var(--stroke)}
+.adv-accordion .acc-chevron{
+  font-size:12px;
+  color:var(--muted2);
+  transition:transform .15s ease;
+}
+.adv-accordion[open] .acc-chevron{transform:rotate(180deg)}
+.adv-accordion .drawer-section{
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.anchor{position:relative;top:-10px}
+
+/* -------------------------
+   DOSAGES (compact + drawer)
+-------------------------- */
+.dosage-section{padding:16px;border-radius:var(--r-lg)}
+.dosage-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.copy-btn{
+  padding:9px 12px;
+  background:linear-gradient(180deg, rgba(110,168,255,.24), rgba(110,168,255,.12));
+  color:white;
+  border:1px solid rgba(110,168,255,.34);
+  border-radius:12px;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  transition:transform .12s, filter .12s;
+  display:flex;align-items:center;gap:6px;
+}
+.copy-btn:hover{filter:brightness(1.03);transform:translateY(-1px)}
+.volume-controls{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap}
+.volume-controls input{flex:1;min-width:150px}
+.dosage-compact{
+  border:1px solid var(--stroke);
+  border-radius:16px;
+  background:rgba(0,0,0,.18);
+  padding:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.dosage-compact .left{
+  display:flex;flex-direction:column;gap:6px;min-width:220px;
+}
+.dosage-compact .k{font-size:11px;color:var(--muted2);font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.dosage-compact .v{font-family:var(--font-mono);font-weight:900;font-size:13px;color:rgba(255,255,255,.85);white-space:pre-wrap}
+.dosage-compact .btn{margin-left:auto}
+
+/* Drawer dosage cards keep your nice look */
+.dosage-grid{display:grid;gap:12px;margin-top:12px}
+@media(min-width:820px){.dosage-grid{grid-template-columns:1fr 1fr}}
+.dosage-card{padding:14px;border-radius:16px}
+.dosage-card h3{font-size:15px;font-weight:900;margin-bottom:10px}
+.dosage-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px;background:rgba(0,0,0,.20);
+  border-radius:12px;margin-bottom:8px;
+  border:1px solid var(--stroke);
+  transition:border-color .12s, background .12s;
+}
+.dosage-item.has-value{border-color:rgba(110,168,255,.40);background:rgba(110,168,255,.08)}
+.dosage-item.zero-value{opacity:.55}
+.dosage-item:last-child{margin-bottom:0}
+.dosage-name{font-size:12.8px;font-weight:900;color:rgba(255,255,255,.86)}
+.dosage-value{font-size:13px;font-weight:900;font-family:var(--font-mono)}
+.dosage-alt{font-size:11px;color:var(--muted2);margin-top:2px;font-family:var(--font-mono)}
+
+.mobile-dock{
+  position:fixed;
+  left:10px;right:10px;
+  bottom:calc(8px + env(safe-area-inset-bottom));
+  z-index:4600;
+  display:none;
+  border-radius:18px;
+  border:1px solid var(--stroke2);
+  background:rgba(15,17,22,.94);
+  backdrop-filter: blur(10px);
+  box-shadow:0 14px 40px rgba(0,0,0,.55);
+  padding:8px;
+  gap:8px;
+}
+.mobile-dock .row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.mobile-dock .row .status-badge{
+  padding:6px 8px;
+  font-size:11px;
+}
+.mobile-dock .vals{
+  display:flex;gap:8px;flex-wrap:wrap;
+  font-family:var(--font-mono);
+  font-weight:900;
+  font-size:11px;
+  color:rgba(255,255,255,.88);
+}
+.mobile-dock .vals span{opacity:.92}
+.mobile-dock .vals b{color:rgba(255,255,255,.95)}
+.mobile-dock .tap{
+  margin-top:4px;
+  margin-bottom:6px;
+  font-size:10.5px;
+  color:var(--muted2);
+}
+.mobile-dock .dock-grid{
+  display:grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap:8px;
+}
+.dock-btn{
+  padding:10px 10px;
+  border-radius:14px;
+  border:1px solid var(--stroke);
+  background:rgba(0,0,0,.18);
+  color:rgba(255,255,255,.92);
+  font-weight:900;
+  font-size:12px;
+  cursor:pointer;
+}
+.dock-btn.primary{
+  background:linear-gradient(180deg, rgba(240,196,106,.22), rgba(240,196,106,.10));
+  border:1px solid rgba(240,196,106,.35);
+}
+.dock-btn.active{
+  border-color:rgba(110,168,255,.45);
+  background:rgba(110,168,255,.10);
+}
+.prod-flow{
+  border:1px solid var(--stroke);
+  border-radius:14px;
+  background:rgba(0,0,0,.16);
+  padding:10px;
+  margin-bottom:10px;
+}
+.prod-steps{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.prod-step{
+  border:1px solid var(--stroke);
+  border-radius:11px;
+  background:rgba(255,255,255,.03);
+  padding:7px 8px;
+  font-size:11px;
+  font-weight:900;
+  color:var(--muted2);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.prod-step b{
+  width:18px;height:18px;
+  border-radius:7px;
+  border:1px solid var(--stroke2);
+  display:grid;place-items:center;
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:var(--muted2);
+}
+.prod-step.done{
+  border-color:rgba(16,185,129,.35);
+  color:rgba(255,255,255,.90);
+  background:rgba(16,185,129,.09);
+}
+.prod-step.done b{
+  border-color:rgba(16,185,129,.42);
+  color:rgba(16,185,129,.95);
+}
+.prod-step.active{
+  border-color:rgba(240,196,106,.45);
+  color:rgba(255,255,255,.92);
+  background:rgba(240,196,106,.10);
+}
+.prod-step.active b{
+  border-color:rgba(240,196,106,.48);
+  color:rgba(255,255,255,.95);
+}
+.prod-stage-copy{
+  margin-top:8px;
+  font-size:11.5px;
+  color:var(--muted);
+  line-height:1.35;
+}
+.prod-cta-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.prod-main-cta{flex:1;min-width:220px}
+.prod-secondary-cta{min-width:130px}
+.autofit-compare{
+  margin-top:10px;
+  border:1px dashed var(--stroke2);
+  border-radius:14px;
+  background:rgba(0,0,0,.14);
+  padding:10px;
+}
+.autofit-compare-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+}
+.autofit-compare-head strong{font-size:11.5px}
+.autofit-compare-head span{
+  font-size:10.5px;
+  color:var(--muted2);
+  font-weight:800;
+}
+.autofit-compare-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.autofit-mini{
+  border:1px solid var(--stroke);
+  border-radius:11px;
+  background:rgba(255,255,255,.03);
+  padding:7px 8px;
+  font-family:var(--font-mono);
+}
+.autofit-mini .k{
+  font-size:10px;
+  color:var(--muted2);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.autofit-mini .v{
+  margin-top:4px;
+  font-size:11px;
+  color:rgba(255,255,255,.88);
+}
+@media(max-width:900px){
+  .autofit-compare-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* Mobile tweaks */
+@media(max-width:767px){
+  body{padding:8px}
+  header{
+    flex-direction:column;
+    align-items:flex-start;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  h1{font-size:18px}
+  .subtitle{font-size:11.5px}
+  .header-right{display:none}
+  .notification{left:10px;right:10px;max-width:none}
+  .notification{top:calc(10px + env(safe-area-inset-top))}
+  .summary-note{display:none}
+  .workflow-strip{display:none}
+  .mobile-dock{display:block}
+  .main-grid{gap:8px}
+  .operations-stack{gap:8px}
+  .card,.summary-card,.dosage-section{padding:10px}
+  .card h2{margin-bottom:8px}
+  .section-intro{font-size:11px;margin:-2px 0 8px}
+  .input-group{margin-bottom:10px}
+  .input-group label{font-size:12px;margin-bottom:4px}
+  .btn-subhelp{font-size:10px;line-height:1.3;margin-top:6px}
+  .btn,.dock-btn,.quick-secondary-toggle,.quick-minerals-toggle{min-height:42px}
+  .btn-cta-pulse{animation-duration:.84s}
+  .preset-pill{width:100%}
+  .preset-pill-main{min-width:0;flex:1}
+  .preset-pill-actions{width:100%;justify-content:flex-end}
+  .preset-pill-action{min-height:32px}
+  .preset-editor-state .btn{margin-left:0}
+  .preset-editor-tools{justify-content:stretch}
+  .preset-editor-tools .btn{width:100%}
+  .stepper-btn{
+    width:28px;
+    min-height:28px !important;
+    height:28px;
+    font-size:13px;
+  }
+  .stepper input[type="number"].stepper-input{
+    min-height:38px;
+    padding:8px 37px;
+  }
+  .drawer-foot{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  #advancedDrawer .drawer-foot .btn{flex:1 1 100%}
+  #cardAction{display:none}
+  #cardDosageCompact{display:none}
+  #cardQuickRead .quick-minerals-toggle{display:none}
+  #cardQuickRead .summary-grid{display:none}
+  #cardQuickRead.mobile-expanded .summary-grid{display:grid !important}
+  #cardQuickRead .quickread-compact{display:flex}
+  #cardQuickRead.mobile-expanded .quick-minerals-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  #cardQuickRead.mobile-expanded .quickread-compact{
+    border-color:rgba(110,168,255,.35);
+    background:rgba(110,168,255,.10);
+  }
+  #cardQuickRead .summary-v{font-size:18px}
+  .prod-steps{grid-template-columns:1fr}
+  .autofit-compare-grid{grid-template-columns:1fr}
+  /* space for merged sticky dock only */
+  .container{padding-bottom:calc(124px + env(safe-area-inset-bottom))}
+}
+
+/* Focus visible */
+.weigh-check:focus-visible,.drawer-close:focus-visible,.notification-close:focus-visible,.preset-edit:focus-visible,.preset-delete:focus-visible,.dock-btn:focus-visible,.btn:focus-visible,.pill .mini-gear:focus-visible{
+  outline:2px solid rgba(110,168,255,.55);
+  outline-offset:2px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Mode Balance plein écran -->
+<div class="weigh-screen" id="weighScreen">
+  <div class="weigh-header">
+    <div>
+      <div class="weigh-title">⚖️ Mode Balance – Checklist de pesée</div>
+      <div class="weigh-sub" id="weighSub">—</div>
+    </div>
+    <button class="weigh-exit" id="weighExitBtn">✕ Quitter</button>
+  </div>
+
+  <div class="weigh-grid">
+    <div class="weigh-card">
+      <h2>🔵 Empâtage</h2>
+      <div class="weigh-list" id="weighMashList"></div>
+      <div class="weigh-meta" id="weighMashMeta">—</div>
+    </div>
+
+    <div class="weigh-card">
+      <h2>🟢 Rinçage</h2>
+      <div class="weigh-list" id="weighSpargeList"></div>
+      <div class="weigh-meta" id="weighSpargeMeta">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer: Avancé -->
+<div class="drawer-overlay" id="advancedDrawer">
+  <div class="drawer" role="dialog" aria-modal="true" aria-label="Réglages avancés">
+    <div class="drawer-head">
+      <div class="drawer-title">⚙️ Réglages avancés</div>
+      <button class="drawer-close" id="advCloseBtn" aria-label="Fermer">✕</button>
+    </div>
+    <div class="drawer-body" id="advBody">
+      <div class="history-toolbar">
+        <button class="btn history-btn" type="button" data-history="undo" title="Annuler (Ctrl/Cmd + Z)">↶ Annuler</button>
+        <button class="btn history-btn" type="button" data-history="redo" title="Rétablir (Ctrl/Cmd + Shift + Z)">↷ Rétablir</button>
+      </div>
+
+      <details class="adv-accordion" id="advAccAdjust">
+        <summary><span>🧪 Ajustements manuels (sliders)</span><span class="acc-chevron">▾</span></summary>
+        <div class="drawer-section">
+          <div class="adjust-layout">
+            <div class="adjust-controls">
+              <div class="slider-group" id="sgAMS">
+                <div class="slider-header">
+                  <span class="slider-label">AMS / CRS (mL/L)</span>
+                  <span class="slider-value"><span id="out_ams">0.00</span> mL/L</span>
+                </div>
+                <input type="range" id="ams_ml_per_l" min="0" max="2.0" step="0.01" value="0.00" />
+              </div>
+
+              <div class="slider-group" id="sgPHOS">
+                <div class="slider-header">
+                  <span class="slider-label">Acide phosphorique 75% (mL/L)</span>
+                  <span class="slider-value"><span id="out_phos">0.00</span> mL/L</span>
+                </div>
+                <input type="range" id="phos75_ml_per_l" min="0" max="1.0" step="0.01" value="0.00" />
+              </div>
+
+              <div class="slider-group" id="sgCaCl2">
+                <div class="slider-header">
+                  <span class="slider-label">CaCl₂ (g/L) — calcul anhydre</span>
+                  <span class="slider-value"><span id="out_cacl2">0.000</span> g/L</span>
+                </div>
+                <input type="range" id="cacl2_g_per_l" min="0" max="1.00" step="0.005" value="0.00" />
+              </div>
+
+              <div class="slider-group" id="sgGyps">
+                <div class="slider-header">
+                  <span class="slider-label">Gypse (CaSO₄·2H₂O) (g/L)</span>
+                  <span class="slider-value"><span id="out_gypsum">0.000</span> g/L</span>
+                </div>
+                <input type="range" id="gypsum_g_per_l" min="0" max="1.00" step="0.005" value="0.00" />
+              </div>
+
+              <div class="slider-group" id="sgEps">
+                <div class="slider-header">
+                  <span class="slider-label">Sel d’Epsom (MgSO₄·7H₂O) (g/L)</span>
+                  <span class="slider-value"><span id="out_epsom">0.000</span> g/L</span>
+                </div>
+                <input type="range" id="epsom_g_per_l" min="0" max="1.00" step="0.005" value="0.00" />
+              </div>
+
+              <div class="slider-group" id="sgNaCl">
+                <div class="slider-header">
+                  <span class="slider-label">Sel (NaCl) (g/L)</span>
+                  <span class="slider-value"><span id="out_nacl">0.000</span> g/L</span>
+                </div>
+                <input type="range" id="nacl_g_per_l" min="0" max="1.00" step="0.005" value="0.00" />
+              </div>
+
+              <div class="btn-subhelp">
+                Limites “sels” (autofit) : AMS ≤ 1.00 mL/L · Phos ≤ 0.30 mL/L · NaCl ≤ 0.10 g/L · Epsom ≤ 0.20 g/L
+              </div>
+
+            </div>
+
+            <aside class="adjust-impact" aria-live="polite">
+              <h4>Impact minéraux (live)</h4>
+              <div class="adjust-impact-note">
+                Base diluée → Final vs Cible (ppm). Écart = Final - Cible.
+              </div>
+
+              <div class="adjust-impact-grid">
+                <div class="adjust-impact-card">
+                  <div class="k">SO₄</div>
+                  <div class="adjust-impact-row"><span>Base</span><span class="v" id="impact_base_so4">—</span></div>
+                  <div class="adjust-impact-row"><span>Δ ajouts</span><span class="delta zero" id="impact_delta_so4">—</span></div>
+                  <div class="adjust-impact-row"><span>Final</span><span class="v" id="impact_final_so4">—</span></div>
+                  <div class="adjust-impact-row"><span>Cible</span><span class="v" id="impact_target_so4">—</span></div>
+                  <div class="adjust-impact-row"><span>Écart</span><span class="gap zero" id="impact_gap_so4">—</span></div>
+                </div>
+                <div class="adjust-impact-card">
+                  <div class="k">Cl</div>
+                  <div class="adjust-impact-row"><span>Base</span><span class="v" id="impact_base_cl">—</span></div>
+                  <div class="adjust-impact-row"><span>Δ ajouts</span><span class="delta zero" id="impact_delta_cl">—</span></div>
+                  <div class="adjust-impact-row"><span>Final</span><span class="v" id="impact_final_cl">—</span></div>
+                  <div class="adjust-impact-row"><span>Cible</span><span class="v" id="impact_target_cl">—</span></div>
+                  <div class="adjust-impact-row"><span>Écart</span><span class="gap zero" id="impact_gap_cl">—</span></div>
+                </div>
+                <div class="adjust-impact-card">
+                  <div class="k">Alk</div>
+                  <div class="adjust-impact-row"><span>Base</span><span class="v" id="impact_base_alk">—</span></div>
+                  <div class="adjust-impact-row"><span>Δ ajouts</span><span class="delta zero" id="impact_delta_alk">—</span></div>
+                  <div class="adjust-impact-row"><span>Final</span><span class="v" id="impact_final_alk">—</span></div>
+                  <div class="adjust-impact-row"><span>Cible</span><span class="v" id="impact_target_alk">—</span></div>
+                  <div class="adjust-impact-row"><span>Écart</span><span class="gap zero" id="impact_gap_alk">—</span></div>
+                </div>
+                <div class="adjust-impact-card">
+                  <div class="k">Mg</div>
+                  <div class="adjust-impact-row"><span>Base</span><span class="v" id="impact_base_mg">—</span></div>
+                  <div class="adjust-impact-row"><span>Δ ajouts</span><span class="delta zero" id="impact_delta_mg">—</span></div>
+                  <div class="adjust-impact-row"><span>Final</span><span class="v" id="impact_final_mg">—</span></div>
+                  <div class="adjust-impact-row"><span>Cible</span><span class="v" id="impact_target_mg">—</span></div>
+                  <div class="adjust-impact-row"><span>Écart</span><span class="gap zero" id="impact_gap_mg">—</span></div>
+                </div>
+                <div class="adjust-impact-card">
+                  <div class="k">Na</div>
+                  <div class="adjust-impact-row"><span>Base</span><span class="v" id="impact_base_na">—</span></div>
+                  <div class="adjust-impact-row"><span>Δ ajouts</span><span class="delta zero" id="impact_delta_na">—</span></div>
+                  <div class="adjust-impact-row"><span>Final</span><span class="v" id="impact_final_na">—</span></div>
+                  <div class="adjust-impact-row"><span>Cible</span><span class="v" id="impact_target_na">—</span></div>
+                  <div class="adjust-impact-row"><span>Écart</span><span class="gap zero" id="impact_gap_na">—</span></div>
+                </div>
+                <div class="adjust-impact-card">
+                  <div class="k">Ca</div>
+                  <div class="adjust-impact-row"><span>Base</span><span class="v" id="impact_base_ca">—</span></div>
+                  <div class="adjust-impact-row"><span>Δ ajouts</span><span class="delta zero" id="impact_delta_ca">—</span></div>
+                  <div class="adjust-impact-row"><span>Final</span><span class="v" id="impact_final_ca">—</span></div>
+                  <div class="adjust-impact-row"><span>Cible</span><span class="v" id="impact_target_ca">—</span></div>
+                  <div class="adjust-impact-row"><span>Écart</span><span class="gap zero" id="impact_gap_ca">—</span></div>
+                </div>
+              </div>
+
+              <div class="adjust-impact-mini" id="impact_ratio_caps">
+                SO₄/Cl — · Caps —
+              </div>
+            </aside>
+          </div>
+        </div>
+      </details>
+
+      <details class="adv-accordion" id="advAccBase">
+        <summary><span>⚙️ Profil source (base)</span><span class="acc-chevron">▾</span></summary>
+        <div class="drawer-section">
+          <div class="input-group">
+            <label>Alcalinité base (ppm CaCO₃) <span class="preset-badge">× 17.8</span></label>
+            <input type="number" id="alk_base_ppm" readonly />
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label>SO₄ base (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="so4_base_ppm" data-dir="-1" aria-label="Diminuer SO₄ base">-</button>
+                <input type="number" class="stepper-input" id="so4_base_ppm" value="20" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+                <button class="btn stepper-btn" type="button" data-target="so4_base_ppm" data-dir="1" aria-label="Augmenter SO₄ base">+</button>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Cl base (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="cl_base_ppm" data-dir="-1" aria-label="Diminuer Cl base">-</button>
+                <input type="number" class="stepper-input" id="cl_base_ppm" value="30" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+                <button class="btn stepper-btn" type="button" data-target="cl_base_ppm" data-dir="1" aria-label="Augmenter Cl base">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group u-mb-12">
+              <label>Mg base (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="mg_base_ppm" data-dir="-1" aria-label="Diminuer Mg base">-</button>
+                <input type="number" class="stepper-input" id="mg_base_ppm" value="5" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+                <button class="btn stepper-btn" type="button" data-target="mg_base_ppm" data-dir="1" aria-label="Augmenter Mg base">+</button>
+              </div>
+            </div>
+            <div class="input-group u-mb-12">
+              <label>Na base (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="na_base_ppm" data-dir="-1" aria-label="Diminuer Na base">-</button>
+                <input type="number" class="stepper-input" id="na_base_ppm" value="12" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+                <button class="btn stepper-btn" type="button" data-target="na_base_ppm" data-dir="1" aria-label="Augmenter Na base">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group u-mb-12">
+            <label>Ca base (ppm)</label>
+            <div class="stepper">
+              <button class="btn stepper-btn" type="button" data-target="ca_base_ppm" data-dir="-1" aria-label="Diminuer Ca base">-</button>
+              <input type="number" class="stepper-input" id="ca_base_ppm" value="95" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+              <button class="btn stepper-btn" type="button" data-target="ca_base_ppm" data-dir="1" aria-label="Augmenter Ca base">+</button>
+            </div>
+          </div>
+
+          <div class="input-group u-mb-0">
+            <label>% Eau osmosée (RO)</label>
+            <div class="stepper">
+              <button class="btn stepper-btn" type="button" data-target="ro_percent" data-dir="-1" aria-label="Diminuer le pourcentage d'eau osmosée">-</button>
+              <input type="number" class="stepper-input" id="ro_percent" value="0" min="0" max="100" step="1" data-stepper-step="1" inputmode="numeric" />
+              <button class="btn stepper-btn" type="button" data-target="ro_percent" data-dir="1" aria-label="Augmenter le pourcentage d'eau osmosée">+</button>
+            </div>
+            <div class="btn-subhelp">
+              RO dilue la base uniquement. Les ajouts (mL/L, g/L) ne sont pas auto-ajustés: relance Autofit ou réajuste les sliders.
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="adv-accordion" id="advAccSecondary">
+        <summary><span>🧪 Cibles secondaires (Mg / Na / Ca)</span><span class="acc-chevron">▾</span></summary>
+        <div class="drawer-section">
+          <div class="lock-row">
+            <label class="lock" title="Si activé, la cible suit automatiquement la base après RO (pas de correction).">
+              <input type="checkbox" id="lock_mg" checked />
+              Mg = base <small>(auto RO)</small>
+            </label>
+            <label class="lock" title="Si activé, la cible suit automatiquement la base après RO (pas de correction).">
+              <input type="checkbox" id="lock_na" checked />
+              Na = base <small>(auto RO)</small>
+            </label>
+            <label class="lock" title="Ca cible suit la base après RO (on ne cherche pas à le 'matcher' au ppm).">
+              <input type="checkbox" id="lock_ca" checked />
+              Ca = base <small>(auto RO)</small>
+            </label>
+          </div>
+
+          <div class="input-row u-mt-10">
+            <div class="input-group u-mb-12">
+              <label>Mg cible (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="mg_target_ppm" data-dir="-1" aria-label="Diminuer Mg cible avancée">-</button>
+                <input type="number" class="stepper-input" id="mg_target_ppm" value="5" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+                <button class="btn stepper-btn" type="button" data-target="mg_target_ppm" data-dir="1" aria-label="Augmenter Mg cible avancée">+</button>
+              </div>
+            </div>
+            <div class="input-group u-mb-12">
+              <label>Na cible (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="na_target_ppm" data-dir="-1" aria-label="Diminuer Na cible avancée">-</button>
+                <input type="number" class="stepper-input" id="na_target_ppm" value="12" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+                <button class="btn stepper-btn" type="button" data-target="na_target_ppm" data-dir="1" aria-label="Augmenter Na cible avancée">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group u-mb-0">
+            <label>Ca cible (ppm)</label>
+            <div class="stepper">
+              <button class="btn stepper-btn" type="button" data-target="ca_target_ppm" data-dir="-1" aria-label="Diminuer Ca cible avancée">-</button>
+              <input type="number" class="stepper-input" id="ca_target_ppm" value="95" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+              <button class="btn stepper-btn" type="button" data-target="ca_target_ppm" data-dir="1" aria-label="Augmenter Ca cible avancée">+</button>
+            </div>
+          </div>
+
+          <div class="btn-subhelp u-mt-10">
+            Le statut global n'est pas bloqué par Ca : on cherche surtout à éviter qu'il monte trop (caps + pénalités).
+          </div>
+        </div>
+      </details>
+
+      <details class="adv-accordion" id="advAccCaps">
+        <summary><span>🧯 Garde-fous (Hard caps)</span><span class="acc-chevron">▾</span></summary>
+        <div class="drawer-section" id="capsSection">
+          <span class="anchor" id="capsAnchor"></span>
+
+          <div class="input-row">
+            <div class="input-group u-m-0">
+              <label>Na max (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="cap_na_ppm" data-dir="-1" aria-label="Diminuer Na max">-</button>
+                <input type="number" class="stepper-input" id="cap_na_ppm" value="30" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="cap_na_ppm" data-dir="1" aria-label="Augmenter Na max">+</button>
+              </div>
+            </div>
+            <div class="input-group u-m-0">
+              <label>Mg max (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="cap_mg_ppm" data-dir="-1" aria-label="Diminuer Mg max">-</button>
+                <input type="number" class="stepper-input" id="cap_mg_ppm" value="10" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="cap_mg_ppm" data-dir="1" aria-label="Augmenter Mg max">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group u-mt-12 u-mb-0">
+            <label>Ca max (ppm)</label>
+            <div class="stepper">
+              <button class="btn stepper-btn" type="button" data-target="cap_ca_ppm" data-dir="-1" aria-label="Diminuer Ca max">-</button>
+              <input type="number" class="stepper-input" id="cap_ca_ppm" value="150" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+              <button class="btn stepper-btn" type="button" data-target="cap_ca_ppm" data-dir="1" aria-label="Augmenter Ca max">+</button>
+            </div>
+          </div>
+
+          <div class="btn-subhelp">
+            Hard cap = l’autofit rejette toute solution qui dépasse ces valeurs.
+          </div>
+        </div>
+      </details>
+
+      <details class="adv-accordion" id="advAccPresets">
+        <summary><span>💾 Presets (à toi)</span><span class="acc-chevron">▾</span></summary>
+        <div class="drawer-section" id="presetsSection">
+          <div class="btn-subhelp u-mt-neg-4 u-mb-10">
+            1) Clique <b>Éditer</b> sur un preset. 2) Ajuste les cibles. 3) Clique <b>Mettre à jour</b>.
+          </div>
+
+          <div class="preset-editor-state" id="presetEditorState" hidden>
+            <strong>Mode édition</strong>
+            <span class="preset-editor-name" id="presetEditorName">—</span>
+            <button class="btn" id="cancelPresetEditBtn" type="button">Annuler</button>
+          </div>
+
+          <div class="preset-editor-tools">
+            <button class="btn" id="presetUseCurrentBtn" type="button">↺ Utiliser cibles actuelles</button>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group u-mb-10">
+              <label>SO₄ preset (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="preset_so4_ppm" data-dir="-1" aria-label="Diminuer SO4 preset">-</button>
+                <input type="number" class="stepper-input" id="preset_so4_ppm" value="75" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="preset_so4_ppm" data-dir="1" aria-label="Augmenter SO4 preset">+</button>
+              </div>
+            </div>
+            <div class="input-group u-mb-10">
+              <label>Cl preset (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="preset_cl_ppm" data-dir="-1" aria-label="Diminuer Cl preset">-</button>
+                <input type="number" class="stepper-input" id="preset_cl_ppm" value="75" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="preset_cl_ppm" data-dir="1" aria-label="Augmenter Cl preset">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group u-mb-10">
+              <label>Alk preset (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="preset_alk_ppm" data-dir="-1" aria-label="Diminuer alcalinité preset">-</button>
+                <input type="number" class="stepper-input" id="preset_alk_ppm" value="10" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="preset_alk_ppm" data-dir="1" aria-label="Augmenter alcalinité preset">+</button>
+              </div>
+            </div>
+            <div class="input-group u-mb-10">
+              <label>Mg preset (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="preset_mg_ppm" data-dir="-1" aria-label="Diminuer Mg preset">-</button>
+                <input type="number" class="stepper-input" id="preset_mg_ppm" value="5" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="preset_mg_ppm" data-dir="1" aria-label="Augmenter Mg preset">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group u-mb-10">
+              <label>Na preset (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="preset_na_ppm" data-dir="-1" aria-label="Diminuer Na preset">-</button>
+                <input type="number" class="stepper-input" id="preset_na_ppm" value="12" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="preset_na_ppm" data-dir="1" aria-label="Augmenter Na preset">+</button>
+              </div>
+            </div>
+            <div class="input-group u-mb-10">
+              <label>Ca preset (ppm)</label>
+              <div class="stepper">
+                <button class="btn stepper-btn" type="button" data-target="preset_ca_ppm" data-dir="-1" aria-label="Diminuer Ca preset">-</button>
+                <input type="number" class="stepper-input" id="preset_ca_ppm" value="95" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+                <button class="btn stepper-btn" type="button" data-target="preset_ca_ppm" data-dir="1" aria-label="Augmenter Ca preset">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="preset-input-group">
+            <input type="text" id="presetName" placeholder="Nom du preset..." />
+            <button class="btn btn-primary" id="savePreset">💾 Créer preset</button>
+          </div>
+          <div class="custom-presets" id="customPresets"></div>
+        </div>
+      </details>
+
+    </div>
+    <div class="drawer-foot" id="advStickyActions">
+      <button class="btn btn-warm" id="autofitBtnAdv">🧠 Autofit</button>
+      <button class="btn btn-primary" id="openDosageBtnAdv">📊 Dosages</button>
+      <button class="btn" id="resetBtn">↺ Reset ajustements</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer: Dosages -->
+<div class="drawer-overlay" id="dosageDrawer">
+  <div class="drawer" role="dialog" aria-modal="true" aria-label="Dosages opérationnels">
+    <div class="drawer-head">
+      <div class="drawer-title">📊 Dosages opérationnels — Détails</div>
+      <button class="drawer-close" id="dosCloseBtn" aria-label="Fermer">✕</button>
+    </div>
+    <div class="drawer-body" id="dosBody">
+
+      <div class="drawer-section">
+        <h3>🧪 Paramètres</h3>
+        <div class="volume-controls">
+          <div class="input-group u-m-0">
+            <label>Volume Empâtage (L)</label>
+            <input type="number" id="mash_l" value="550" step="1" min="0" />
+          </div>
+          <div class="input-group u-m-0">
+            <label>Volume Rinçage (L)</label>
+            <input type="number" id="sparge_l" value="300" step="1" min="0" />
+          </div>
+
+          <div class="input-group u-m-0 u-minw-250">
+            <label>CaCl₂ — forme pesée (affichage grammes)</label>
+            <select class="selectlike" id="cacl2_weigh_form">
+              <option value="anhydrous">CaCl₂ anhydre</option>
+              <option value="dihydrate">CaCl₂·2H₂O (dihydraté)</option>
+            </select>
+          </div>
+
+          <button class="btn" id="scenarioA">550/300</button>
+          <button class="btn" id="scenarioB">550/400</button>
+        </div>
+
+        <div class="u-flex-wrap u-mt-10">
+          <button class="copy-btn" id="copyDosageBtn">📋 Copier</button>
+          <button class="btn btn-primary" id="weighModeBtn2">⚖️ Ouvrir Balance</button>
+        </div>
+      </div>
+
+      <div class="dosage-grid">
+        <div class="dosage-card">
+          <h3>🔵 Empâtage</h3>
+
+          <div class="dosage-item" id="itemMashAMS">
+            <div class="dosage-name">AMS</div>
+            <div class="u-text-right">
+              <div class="dosage-value"><span id="mash_ams_g">0</span> g</div>
+              <div class="dosage-alt">(<span id="mash_ams_ml">0</span> mL)</div>
+            </div>
+          </div>
+
+          <div class="dosage-item" id="itemMashPHOS">
+            <div class="dosage-name">Phosphorique 75%</div>
+            <div class="u-text-right">
+              <div class="dosage-value"><span id="mash_phos_g">0</span> g</div>
+              <div class="dosage-alt">(<span id="mash_phos_ml">0</span> mL)</div>
+            </div>
+          </div>
+
+          <div class="dosage-item" id="itemMashCaCl2">
+            <div class="dosage-name">CaCl₂ (à peser)</div>
+            <div class="u-text-right">
+              <div class="dosage-value"><span id="mash_cacl2_g">0</span> g</div>
+              <div class="dosage-alt">équiv. autre forme: <span id="mash_cacl2_alt_g">0</span> g</div>
+            </div>
+          </div>
+
+          <div class="dosage-item" id="itemMashGypsum">
+            <div class="dosage-name">Gypse</div>
+            <div class="dosage-value"><span id="mash_gypsum_g">0</span> g</div>
+          </div>
+
+          <div class="dosage-item" id="itemMashEpsom">
+            <div class="dosage-name">Sel d’Epsom</div>
+            <div class="dosage-value"><span id="mash_epsom_g">0</span> g</div>
+          </div>
+
+          <div class="dosage-item" id="itemMashNaCl">
+            <div class="dosage-name">NaCl</div>
+            <div class="dosage-value"><span id="mash_nacl_g">0</span> g</div>
+          </div>
+        </div>
+
+        <div class="dosage-card">
+          <h3>🟢 Rinçage</h3>
+
+          <div class="dosage-item" id="itemSpargeAMS">
+            <div class="dosage-name">AMS</div>
+            <div class="u-text-right">
+              <div class="dosage-value"><span id="sparge_ams_g">0</span> g</div>
+              <div class="dosage-alt">(<span id="sparge_ams_ml">0</span> mL)</div>
+            </div>
+          </div>
+
+          <div class="dosage-item" id="itemSpargePHOS">
+            <div class="dosage-name">Phosphorique 75%</div>
+            <div class="u-text-right">
+              <div class="dosage-value"><span id="sparge_phos_g">0</span> g</div>
+              <div class="dosage-alt">(<span id="sparge_phos_ml">0</span> mL)</div>
+            </div>
+          </div>
+
+          <div class="dosage-item" id="itemSpargeCaCl2">
+            <div class="dosage-name">CaCl₂ (à peser)</div>
+            <div class="u-text-right">
+              <div class="dosage-value"><span id="sparge_cacl2_g">0</span> g</div>
+              <div class="dosage-alt">équiv. autre forme: <span id="sparge_cacl2_alt_g">0</span> g</div>
+            </div>
+          </div>
+
+          <div class="dosage-item" id="itemSpargeGypsum">
+            <div class="dosage-name">Gypse</div>
+            <div class="dosage-value"><span id="sparge_gypsum_g">0</span> g</div>
+          </div>
+
+          <div class="dosage-item" id="itemSpargeEpsom">
+            <div class="dosage-name">Sel d’Epsom</div>
+            <div class="dosage-value"><span id="sparge_epsom_g">0</span> g</div>
+          </div>
+
+          <div class="dosage-item" id="itemSpargeNaCl">
+            <div class="dosage-name">NaCl</div>
+            <div class="dosage-value"><span id="sparge_nacl_g">0</span> g</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Bottom dock (mobile) -->
+<div class="mobile-dock" id="mobileDock" aria-label="Actions rapides">
+  <div class="row" role="status" aria-live="polite">
+    <div class="status-badge needs-adjustment" id="statusBadgeMobile">🔴 Ajuster</div>
+    <div class="vals" id="mobileVals">
+      <span>SO₄ <b id="m_so4">—</b></span>
+      <span>Cl <b id="m_cl">—</b></span>
+      <span>Alk <b id="m_alk">—</b></span>
+      <span class="u-opacity-70">ppm</span>
+    </div>
+  </div>
+  <div class="tap" id="mobileDockHint">Bouton principal pour avancer · ⚙️ pour réglages</div>
+  <div class="dock-grid">
+    <button class="dock-btn primary" id="dockAutofit">🧠 Lancer Autofit</button>
+    <button class="dock-btn" id="dockAdvanced">⚙️ Avancé</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <h1>🍺 Correction d’eau</h1>
+      <div class="subtitle">Prod: mesure → cibles → Autofit → dosages/pesée. Réglages fins dans ⚙️.</div>
+    </div>
+
+    <div class="header-right">
+      <div class="status-badge needs-adjustment" id="statusBadge" title="Statut basé sur SO₄ / Cl / Alk (et Mg/Na si non lock)">
+        🔴 Ajuster
+      </div>
+
+      <div class="active-preset-badge is-hidden" id="activePresetBadge" title="Tap pour retirer le label preset">
+        ✅ <span id="activePresetName"></span>
+      </div>
+      <button class="btn history-btn" type="button" data-history="undo" title="Annuler (Ctrl/Cmd + Z)">↶ Annuler</button>
+      <button class="btn history-btn" type="button" data-history="redo" title="Rétablir (Ctrl/Cmd + Shift + Z)">↷ Rétablir</button>
+
+      <!-- Caps HUD always visible + mini gear to open caps section -->
+      <div class="pill" title="Caps (hard): Na / Mg / Ca">
+        🧯 <strong id="hud_caps">—</strong>
+        <button class="mini-gear" id="openCapsBtn" aria-label="Ouvrir les caps">⚙️</button>
+      </div>
+
+      <button class="btn" id="openAdvancedBtn" title="Ouvrir les réglages avancés">⚙️ Avancé</button>
+      <button class="btn btn-primary" id="weighModeBtn" title="Checklist de pesée plein écran">⚖️ Balance</button>
+    </div>
+  </header>
+
+  <div class="workflow-strip" aria-label="Workflow de production">
+    <div class="workflow-step"><span class="num">1</span><span class="txt"><strong>Mesure</strong><small>Salifert + base</small></span></div>
+    <div class="workflow-step"><span class="num">2</span><span class="txt"><strong>Cibles</strong><small>SO₄, Cl, Alk</small></span></div>
+    <div class="workflow-step"><span class="num">3</span><span class="txt"><strong>Autofit</strong><small>caps + goût</small></span></div>
+    <div class="workflow-step"><span class="num">4</span><span class="txt"><strong>Pesée</strong><small>Balance + dosages</small></span></div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- Mesure & cibles (Prod) -->
+    <div class="card" id="cardMeasure">
+      <h2><span class="emoji">🔬</span> Mesure & cibles</h2>
+      <div class="section-intro">
+        Étape 1: saisis mesure + cibles, puis lance le bouton principal.
+      </div>
+
+      <div class="input-group">
+        <label>Mesure Salifert (dKH)</label>
+        <div class="stepper">
+          <button class="btn stepper-btn" type="button" data-target="salifert_dkh" data-dir="-1" aria-label="Diminuer mesure Salifert">-</button>
+          <input type="number" class="stepper-input" id="salifert_dkh" step="0.1" min="0" max="60" value="9.3" data-stepper-step="0.1" inputmode="decimal" />
+          <button class="btn stepper-btn" type="button" data-target="salifert_dkh" data-dir="1" aria-label="Augmenter mesure Salifert">+</button>
+        </div>
+      </div>
+
+      <!-- Quick preset loader (simple mode) -->
+      <div class="input-group" id="quickPresetWrap">
+        <label>Preset (charger)</label>
+        <select class="selectlike" id="quickPresetSelect">
+          <option value="">— Aucun preset —</option>
+        </select>
+      </div>
+
+      <div class="u-h-6"></div>
+
+      <h2 class="subsection-title"><span class="emoji">🎯</span> Cibles de profil</h2>
+
+      <div class="input-row">
+        <div class="input-group">
+          <label>SO₄ cible (ppm)</label>
+          <div class="stepper">
+            <button class="btn stepper-btn" type="button" data-target="so4_target_ppm" data-dir="-1" aria-label="Diminuer SO₄ cible">-</button>
+            <input type="number" class="stepper-input" id="so4_target_ppm" value="75" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+            <button class="btn stepper-btn" type="button" data-target="so4_target_ppm" data-dir="1" aria-label="Augmenter SO₄ cible">+</button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Cl cible (ppm)</label>
+          <div class="stepper">
+            <button class="btn stepper-btn" type="button" data-target="cl_target_ppm" data-dir="-1" aria-label="Diminuer Cl cible">-</button>
+            <input type="number" class="stepper-input" id="cl_target_ppm" value="75" step="1" min="0" data-stepper-step="1" inputmode="numeric" />
+            <button class="btn stepper-btn" type="button" data-target="cl_target_ppm" data-dir="1" aria-label="Augmenter Cl cible">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-group u-mt-2 u-mb-0">
+        <label>Alcalinité cible (ppm CaCO₃)</label>
+        <div class="stepper">
+          <button class="btn stepper-btn" type="button" data-target="alk_target_ppm" data-dir="-1" aria-label="Diminuer alcalinité cible">-</button>
+          <input type="number" class="stepper-input" id="alk_target_ppm" value="10" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+          <button class="btn stepper-btn" type="button" data-target="alk_target_ppm" data-dir="1" aria-label="Augmenter alcalinité cible">+</button>
+        </div>
+      </div>
+
+      <div class="u-mt-10 u-row-end">
+        <button class="quick-secondary-toggle" id="toggleQuickMgNa" type="button" aria-expanded="false">
+          + Mg/Na rapides
+        </button>
+      </div>
+
+      <div class="input-row quick-secondary-targets" id="quickMgNaTargets" hidden>
+        <div class="input-group u-m-0">
+          <label>Mg cible (ppm)</label>
+          <div class="stepper">
+            <button class="btn stepper-btn" type="button" data-target="mg_target_ppm_quick" data-dir="-1" aria-label="Diminuer Mg cible">-</button>
+            <input type="number" class="stepper-input" id="mg_target_ppm_quick" value="5" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+            <button class="btn stepper-btn" type="button" data-target="mg_target_ppm_quick" data-dir="1" aria-label="Augmenter Mg cible">+</button>
+          </div>
+        </div>
+        <div class="input-group u-m-0">
+          <label>Na cible (ppm)</label>
+          <div class="stepper">
+            <button class="btn stepper-btn" type="button" data-target="na_target_ppm_quick" data-dir="-1" aria-label="Diminuer Na cible">-</button>
+            <input type="number" class="stepper-input" id="na_target_ppm_quick" value="12" step="0.1" min="0" data-stepper-step="1" inputmode="decimal" />
+            <button class="btn stepper-btn" type="button" data-target="na_target_ppm_quick" data-dir="1" aria-label="Augmenter Na cible">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-subhelp u-mt-10">
+        💡 Base source, caps, sliders, presets: tout est dans ⚙️ Avancé.
+      </div>
+    </div>
+
+    <div class="operations-stack">
+
+      <!-- Lecture rapide -->
+      <div class="summary-card" id="cardQuickRead">
+        <div class="summary-title">
+          <h2>🧭 Lecture rapide</h2>
+          <div class="summary-tools">
+            <button class="quick-minerals-toggle" id="toggleQuickMinerals" type="button" aria-expanded="false">+ Mg/Na/Ca</button>
+            <div class="summary-note">Tap ratio pour inverser.</div>
+          </div>
+        </div>
+
+        <div class="quickread-compact" id="quickReadCompact" role="button" tabindex="0" aria-expanded="false" aria-label="Afficher le détail de lecture rapide">
+          <span>SO₄ <b id="qr_so4">—</b></span>
+          <span>Cl <b id="qr_cl">—</b></span>
+          <span>Alk <b id="qr_alk">—</b></span>
+          <span>Mg <b id="qr_mg">—</b></span>
+          <span>Na <b id="qr_na">—</b></span>
+          <span>Ca <b id="qr_ca">—</b></span>
+          <span class="u-opacity-70">ppm</span>
+          <span class="hint" id="quickReadHint">Tap pour détails ▾</span>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-box" title="Sulfates (SO₄). Influence : plus sec/amer si haut, plus rond si bas.">
+            <div class="summary-k">SO₄</div>
+            <div class="summary-v"><span id="hud_so4">—</span> <span class="summary-unit">ppm</span></div>
+            <div class="summary-sub">
+              <span>cible <span id="hud_so4_t">—</span></span>
+              <span class="diff" id="hud_so4_d">—</span>
+            </div>
+          </div>
+
+          <div class="summary-box" title="Chlorures (Cl). Influence : plus rond/malté si haut, plus sec si bas.">
+            <div class="summary-k">Cl</div>
+            <div class="summary-v"><span id="hud_cl">—</span> <span class="summary-unit">ppm</span></div>
+            <div class="summary-sub">
+              <span>cible <span id="hud_cl_t">—</span></span>
+              <span class="diff" id="hud_cl_d">—</span>
+            </div>
+          </div>
+
+          <div class="summary-box clickable" id="ratioBox" title="Clique pour switch SO₄/Cl ↔ Cl/SO₄" role="button" tabindex="0" aria-label="Basculer l'affichage du ratio SO4/Cl">
+            <div class="summary-k">Ratio</div>
+            <div class="ratio-word" id="hud_ratio_tag">—</div>
+            <div class="ratio-value"><span id="hud_ratio_value">—</span></div>
+            <div class="ratio-sub">
+              <span class="hint" id="hud_ratio_mode">—</span>
+              <span id="hud_ratio_other">—</span>
+            </div>
+          </div>
+
+          <div class="summary-box" title="Alcalinité (CaCO₃). Impact sur acidification/pH.">
+            <div class="summary-k">Alk</div>
+            <div class="summary-v"><span id="hud_alk">—</span> <span class="summary-unit">ppm</span></div>
+            <div class="summary-sub">
+              <span>cible <span id="hud_alk_t">—</span></span>
+              <span class="diff" id="hud_alk_d">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-grid quick-minerals-row" id="quickMineralsRow" hidden>
+          <div class="summary-box" title="Magnésium (Mg).">
+            <div class="summary-k">Mg</div>
+            <div class="summary-v"><span id="hud_mg">—</span> <span class="summary-unit">ppm</span></div>
+            <div class="summary-sub">
+              <span>cible <span id="hud_mg_t">—</span></span>
+              <span class="diff" id="hud_mg_d">—</span>
+            </div>
+          </div>
+          <div class="summary-box" title="Sodium (Na).">
+            <div class="summary-k">Na</div>
+            <div class="summary-v"><span id="hud_na">—</span> <span class="summary-unit">ppm</span></div>
+            <div class="summary-sub">
+              <span>cible <span id="hud_na_t">—</span></span>
+              <span class="diff" id="hud_na_d">—</span>
+            </div>
+          </div>
+          <div class="summary-box" title="Calcium (Ca).">
+            <div class="summary-k">Ca</div>
+            <div class="summary-v"><span id="hud_ca">—</span> <span class="summary-unit">ppm</span></div>
+            <div class="summary-sub">
+              <span>cible <span id="hud_ca_t">—</span></span>
+              <span class="diff" id="hud_ca_d">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prod action card (Simple mode hero) -->
+      <div class="card" id="cardAction">
+        <h2><span class="emoji">🧠</span> Action guidée</h2>
+        <div class="section-intro">
+          Un bouton principal qui s’adapte à l’étape en cours.
+        </div>
+
+        <div class="prod-flow">
+          <div class="prod-steps" aria-label="Étapes production">
+            <div class="prod-step done" id="prodStepTargets"><b>1</b><span>Cibles</span></div>
+            <div class="prod-step active" id="prodStepAutofit"><b>2</b><span>Autofit</span></div>
+            <div class="prod-step" id="prodStepDosages"><b>3</b><span>Dosages</span></div>
+          </div>
+          <div class="prod-stage-copy" id="prodStageCopy">
+            Étape 2/3: lance Autofit pour générer les dosages.
+          </div>
+        </div>
+
+        <div class="prod-cta-row">
+          <button class="btn btn-warm prod-main-cta" id="prodMainCta" data-action="autofit">🧠 Lancer Autofit</button>
+          <button class="btn prod-secondary-cta" id="prodSecondaryCta">⚙️ Avancé</button>
+        </div>
+
+        <div class="autofit-compare" id="autofitCompare" hidden>
+          <div class="autofit-compare-head">
+            <strong>Avant / Après Autofit</strong>
+            <span id="autofitCompareLabel">caps + goût</span>
+          </div>
+          <div class="autofit-compare-grid">
+            <div class="autofit-mini"><div class="k">SO4</div><div class="v"><span id="af_before_so4">—</span> → <span id="af_after_so4">—</span></div></div>
+            <div class="autofit-mini"><div class="k">Cl</div><div class="v"><span id="af_before_cl">—</span> → <span id="af_after_cl">—</span></div></div>
+            <div class="autofit-mini"><div class="k">Alk</div><div class="v"><span id="af_before_alk">—</span> → <span id="af_after_alk">—</span></div></div>
+            <div class="autofit-mini"><div class="k">Mg</div><div class="v"><span id="af_before_mg">—</span> → <span id="af_after_mg">—</span></div></div>
+            <div class="autofit-mini"><div class="k">Na</div><div class="v"><span id="af_before_na">—</span> → <span id="af_after_na">—</span></div></div>
+            <div class="autofit-mini"><div class="k">Ca</div><div class="v"><span id="af_before_ca">—</span> → <span id="af_after_ca">—</span></div></div>
+          </div>
+        </div>
+
+        <div class="btn-subhelp">
+          Si un cap bloque: ⚙️ Avancé → 🧯 Caps (ou sliders).
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Dosages (compact summary only) -->
+  <div class="dosage-section" id="cardDosageCompact">
+    <div class="dosage-header">
+      <h2><span class="emoji">📊</span> Dosages</h2>
+      <button class="copy-btn" id="copyDosageBtn2">📋 Copier</button>
+    </div>
+
+    <div class="dosage-compact">
+      <div class="left">
+        <div class="k">Résumé</div>
+        <div class="v" id="dosageSummary">—</div>
+      </div>
+      <button class="btn btn-primary" id="openDosageBtn2">📊 Voir détails</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ==========================================================
+   MOTEUR / CALCUL — inchangé (formules identiques)
+   ========================================================== */
+function clamp(n,min,max){ return Math.min(Math.max(n,min),max); }
+function roundTo(n,dec=1){ const p=10**dec; return Math.round(n*p)/p; }
+function fmt(n,dec=1){ if(!Number.isFinite(n)) return (dec===0?'0':'0.0'); return roundTo(n,dec).toFixed(dec); }
+const $ = (id)=>document.getElementById(id);
+
+const CHEM = {
+  AMS:      { so4: 89.0,  cl: 63.0,   alk: -182.9 },
+  PHOS75:   { alk: -602.0 },
+  GYPSUM_2H2O: { so4: 557.0, ca: 233.0 },
+  EPSOM_7H2O:  { so4: 389.9, mg: 98.6 },
+  NACL:        { cl: 606.6, na: 393.4 },
+  CACL2_ANHYDROUS: { cl: 640.0, ca: 361.0 },
+  DENSITY: { AMS_g_per_ml: 1.086, PHOS75_g_per_ml: 1.58 },
+  DKH_TO_CACO3: 17.8
+};
+
+const SAFE = {
+  max: { ams: 1.00, phos: 0.30, nacl: 0.10, epsom: 0.20, gypsum: 0.60, cacl2: 0.60 },
+  warnFinal: { na: 25, mg: 10, ca: 150 }
+};
+
+const TOL = {
+  hard: { so4: 5, cl: 5, alk: 5, mg: 2, na: 2 },
+  soft: { so4: 10, cl: 10, alk: 10, mg: 5, na: 5 }
+};
+
+const DOM = {
+  base: {
+    salifert_dkh: $("salifert_dkh"),
+    alk_base_ppm: $("alk_base_ppm"),
+    so4: $("so4_base_ppm"),
+    cl: $("cl_base_ppm"),
+    mg: $("mg_base_ppm"),
+    na: $("na_base_ppm"),
+    ca: $("ca_base_ppm"),
+    ro: $("ro_percent")
+  },
+  target: {
+    so4: $("so4_target_ppm"),
+    cl: $("cl_target_ppm"),
+    alk: $("alk_target_ppm"),
+    mg: $("mg_target_ppm"),
+    na: $("na_target_ppm"),
+    ca: $("ca_target_ppm")
+  },
+  locks: { mg: $("lock_mg"), na: $("lock_na"), ca: $("lock_ca") },
+  caps: { na: $("cap_na_ppm"), mg: $("cap_mg_ppm"), ca: $("cap_ca_ppm") },
+  add: {
+    ams: $("ams_ml_per_l"),
+    phos: $("phos75_ml_per_l"),
+    cacl2: $("cacl2_g_per_l"),
+    gypsum: $("gypsum_g_per_l"),
+    epsom: $("epsom_g_per_l"),
+    nacl: $("nacl_g_per_l")
+  },
+  volumes: { mash: $("mash_l"), sparge: $("sparge_l") },
+  dosage: { cacl2WeighForm: $("cacl2_weigh_form") },
+  out: {
+    ams: $("out_ams"), phos: $("out_phos"), cacl2: $("out_cacl2"),
+    gypsum: $("out_gypsum"), epsom: $("out_epsom"), nacl: $("out_nacl"),
+
+    hud_so4: $("hud_so4"), hud_so4_t: $("hud_so4_t"), hud_so4_d: $("hud_so4_d"),
+    hud_cl: $("hud_cl"), hud_cl_t: $("hud_cl_t"), hud_cl_d: $("hud_cl_d"),
+    hud_alk: $("hud_alk"), hud_alk_t: $("hud_alk_t"), hud_alk_d: $("hud_alk_d"),
+    qr_so4: $("qr_so4"), qr_cl: $("qr_cl"), qr_alk: $("qr_alk"),
+    qr_mg: $("qr_mg"), qr_na: $("qr_na"), qr_ca: $("qr_ca"),
+    hud_mg: $("hud_mg"), hud_mg_t: $("hud_mg_t"), hud_mg_d: $("hud_mg_d"),
+    hud_na: $("hud_na"), hud_na_t: $("hud_na_t"), hud_na_d: $("hud_na_d"),
+    hud_ca: $("hud_ca"), hud_ca_t: $("hud_ca_t"), hud_ca_d: $("hud_ca_d"),
+
+    hud_ratio_tag: $("hud_ratio_tag"),
+    hud_ratio_value: $("hud_ratio_value"),
+    hud_ratio_mode: $("hud_ratio_mode"),
+    hud_ratio_other: $("hud_ratio_other"),
+
+    hud_caps: $("hud_caps"),
+
+    mash_ams_ml: $("mash_ams_ml"), mash_ams_g: $("mash_ams_g"),
+    mash_phos_ml: $("mash_phos_ml"), mash_phos_g: $("mash_phos_g"),
+    mash_cacl2_g: $("mash_cacl2_g"), mash_cacl2_alt_g: $("mash_cacl2_alt_g"),
+    mash_gypsum_g: $("mash_gypsum_g"), mash_epsom_g: $("mash_epsom_g"), mash_nacl_g: $("mash_nacl_g"),
+
+    sparge_ams_ml: $("sparge_ams_ml"), sparge_ams_g: $("sparge_ams_g"),
+    sparge_phos_ml: $("sparge_phos_ml"), sparge_phos_g: $("sparge_phos_g"),
+    sparge_cacl2_g: $("sparge_cacl2_g"), sparge_cacl2_alt_g: $("sparge_cacl2_alt_g"),
+    sparge_gypsum_g: $("sparge_gypsum_g"), sparge_epsom_g: $("sparge_epsom_g"), sparge_nacl_g: $("sparge_nacl_g")
+  },
+  ui: {
+    statusBadge: $("statusBadge"),
+    statusBadgeMobile: $("statusBadgeMobile"),
+    activePresetBadge: $("activePresetBadge"),
+    activePresetName: $("activePresetName"),
+    sgAMS: $("sgAMS"), sgPHOS: $("sgPHOS"), sgEps: $("sgEps"), sgNaCl: $("sgNaCl")
+  },
+  prod: {
+    mainCta: $("prodMainCta"),
+    secondaryCta: $("prodSecondaryCta"),
+    dosageBtnCard: $("openDosageBtn2"),
+    dosageBtnAdv: $("openDosageBtnAdv"),
+    dosageCardCompact: $("cardDosageCompact"),
+    stageCopy: $("prodStageCopy"),
+    stepTargets: $("prodStepTargets"),
+    stepAutofit: $("prodStepAutofit"),
+    stepDosages: $("prodStepDosages"),
+    compareWrap: $("autofitCompare"),
+    compareLabel: $("autofitCompareLabel"),
+    before: {
+      so4: $("af_before_so4"), cl: $("af_before_cl"), alk: $("af_before_alk"),
+      mg: $("af_before_mg"), na: $("af_before_na"), ca: $("af_before_ca")
+    },
+    after: {
+      so4: $("af_after_so4"), cl: $("af_after_cl"), alk: $("af_after_alk"),
+      mg: $("af_after_mg"), na: $("af_after_na"), ca: $("af_after_ca")
+    }
+  },
+  impact: {
+    base: {
+      so4: $("impact_base_so4"), cl: $("impact_base_cl"), alk: $("impact_base_alk"),
+      mg: $("impact_base_mg"), na: $("impact_base_na"), ca: $("impact_base_ca")
+    },
+    delta: {
+      so4: $("impact_delta_so4"), cl: $("impact_delta_cl"), alk: $("impact_delta_alk"),
+      mg: $("impact_delta_mg"), na: $("impact_delta_na"), ca: $("impact_delta_ca")
+    },
+    final: {
+      so4: $("impact_final_so4"), cl: $("impact_final_cl"), alk: $("impact_final_alk"),
+      mg: $("impact_final_mg"), na: $("impact_final_na"), ca: $("impact_final_ca")
+    },
+    target: {
+      so4: $("impact_target_so4"), cl: $("impact_target_cl"), alk: $("impact_target_alk"),
+      mg: $("impact_target_mg"), na: $("impact_target_na"), ca: $("impact_target_ca")
+    },
+    gap: {
+      so4: $("impact_gap_so4"), cl: $("impact_gap_cl"), alk: $("impact_gap_alk"),
+      mg: $("impact_gap_mg"), na: $("impact_gap_na"), ca: $("impact_gap_ca")
+    },
+    ratioCaps: $("impact_ratio_caps")
+  },
+  quickRead: {
+    toggle: $("toggleQuickMinerals"),
+    row: $("quickMineralsRow"),
+    compact: $("quickReadCompact"),
+    hint: $("quickReadHint"),
+    card: $("cardQuickRead")
+  },
+  ratio: { box: $("ratioBox") },
+  weigh: {
+    screen: $("weighScreen"),
+    btn: $("weighModeBtn"),
+    btnDrawer: $("weighModeBtn2"),
+    exit: $("weighExitBtn"),
+    sub: $("weighSub"),
+    mashList: $("weighMashList"),
+    spargeList: $("weighSpargeList"),
+    mashMeta: $("weighMashMeta"),
+    spargeMeta: $("weighSpargeMeta")
+  },
+  mobile: {
+    m_so4: $("m_so4"), m_cl: $("m_cl"), m_alk: $("m_alk"),
+    dosageSummary: $("dosageSummary"),
+    dockPrimary: $("dockAutofit"),
+    dockHint: $("mobileDockHint")
+  },
+  drawers: {
+    adv: $("advancedDrawer"),
+    advClose: $("advCloseBtn"),
+    dos: $("dosageDrawer"),
+    dosClose: $("dosCloseBtn")
+  },
+  quickPreset: {
+    select: $("quickPresetSelect")
+  },
+  quickTargets: {
+    toggle: $("toggleQuickMgNa"),
+    wrap: $("quickMgNaTargets"),
+    mg: $("mg_target_ppm_quick"),
+    na: $("na_target_ppm_quick")
+  },
+  history: {
+    undoBtns: Array.from(document.querySelectorAll('[data-history="undo"]')),
+    redoBtns: Array.from(document.querySelectorAll('[data-history="redo"]'))
+  }
+};
+
+let _lockInternal = false;
+const WORKFLOW = {
+  lastAutofitSignature: null,
+  autofitDone: false,
+  dosagesOpened: false,
+  compare: null,
+  paramsReviewed: false,
+  additionsFromAutofit: false
+};
+const UI_HINTS = {
+  lastPrimaryAction: 'autofit',
+  pulseTimeoutId: null
+};
+const HISTORY = {
+  limit: 90,
+  past: [],
+  future: [],
+  current: null,
+  currentSig: '',
+  timerId: null,
+  applying: false
+};
+const RO_HINT = {
+  timerId: null,
+  lastValue: null,
+  lastToastAt: 0
+};
+
+function normalizeWorkflowProfile(raw){
+  if(!raw || typeof raw !== 'object') return null;
+  return {
+    so4: clampNonNeg(safeNum(raw.so4, 0)),
+    cl: clampNonNeg(safeNum(raw.cl, 0)),
+    alk: clampNonNeg(safeNum(raw.alk, 0)),
+    mg: clampNonNeg(safeNum(raw.mg, 0)),
+    na: clampNonNeg(safeNum(raw.na, 0)),
+    ca: clampNonNeg(safeNum(raw.ca, 0))
+  };
+}
+function saveWorkflowState(){
+  try{
+    const compareBefore = normalizeWorkflowProfile(WORKFLOW.compare?.before);
+    const compareAfter = normalizeWorkflowProfile(WORKFLOW.compare?.after);
+    const hasValidCompare = !!(WORKFLOW.autofitDone && compareBefore && compareAfter);
+    const payload = {
+      lastAutofitSignature: (typeof WORKFLOW.lastAutofitSignature === 'string' && WORKFLOW.lastAutofitSignature.length)
+        ? WORKFLOW.lastAutofitSignature
+        : null,
+      autofitDone: !!WORKFLOW.autofitDone,
+      dosagesOpened: !!(WORKFLOW.autofitDone && WORKFLOW.dosagesOpened),
+      paramsReviewed: !!WORKFLOW.paramsReviewed,
+      additionsFromAutofit: !!WORKFLOW.additionsFromAutofit,
+      compare: hasValidCompare
+        ? {
+            label: String(WORKFLOW.compare?.label || 'caps + goût'),
+            before: compareBefore,
+            after: compareAfter
+          }
+        : null
+    };
+    localStorage.setItem('waterWorkflowV1', JSON.stringify(payload));
+  }catch(e){}
+}
+function loadWorkflowState(){
+  try{
+    const raw = localStorage.getItem('waterWorkflowV1');
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    const hasSig = (typeof parsed?.lastAutofitSignature === 'string' && parsed.lastAutofitSignature.length > 0);
+    const autofitDone = !!(parsed?.autofitDone && hasSig);
+    const dosagesOpened = !!(autofitDone && parsed?.dosagesOpened);
+    const paramsReviewed = !!(parsed?.paramsReviewed || dosagesOpened);
+    const additionsFromAutofit = (typeof parsed?.additionsFromAutofit === 'boolean')
+      ? parsed.additionsFromAutofit
+      : hasSig;
+    const before = normalizeWorkflowProfile(parsed?.compare?.before);
+    const after = normalizeWorkflowProfile(parsed?.compare?.after);
+    return {
+      lastAutofitSignature: hasSig ? parsed.lastAutofitSignature : null,
+      autofitDone,
+      dosagesOpened,
+      paramsReviewed,
+      additionsFromAutofit,
+      compare: (autofitDone && before && after)
+        ? { label: String(parsed?.compare?.label || 'caps + goût'), before, after }
+        : null
+    };
+  }catch(e){
+    return null;
+  }
+}
+
+function signatureForAutofit(state){
+  return JSON.stringify({
+    base: state.base,
+    target: state.target,
+    locks: state.locks,
+    caps: state.caps,
+    additions: state.additions
+  });
+}
+function hasManualAdditions(state){
+  const a = state?.additions || {};
+  return [
+    safeNum(a.ams_ml_per_l, 0),
+    safeNum(a.phos75_ml_per_l, 0),
+    safeNum(a.cacl2_g_per_l, 0),
+    safeNum(a.gypsum_g_per_l, 0),
+    safeNum(a.epsom_g_per_l, 0),
+    safeNum(a.nacl_g_per_l, 0)
+  ].some(v => v > 0.0005);
+}
+function hasStaleAutofitAdditions(state){
+  if(!WORKFLOW.lastAutofitSignature || WORKFLOW.autofitDone) return false;
+  if(!WORKFLOW.additionsFromAutofit) return false;
+  return hasManualAdditions(state || getStateFromUI());
+}
+function isDosageReady(state){
+  if(hasStaleAutofitAdditions(state)) return false;
+  return !!WORKFLOW.autofitDone || hasManualAdditions(state || getStateFromUI());
+}
+function notifyRoMixBehavior(){
+  const roNow = safeNum(DOM.base.ro?.value, 0);
+  if(RO_HINT.lastValue === null){
+    RO_HINT.lastValue = roNow;
+    return;
+  }
+  if(Math.abs(roNow - RO_HINT.lastValue) < 1e-9) return;
+  RO_HINT.lastValue = roNow;
+
+  const state = getStateFromUI();
+  if(!hasManualAdditions(state)) return;
+
+  const now = Date.now();
+  if((now - RO_HINT.lastToastAt) < 1800) return;
+  RO_HINT.lastToastAt = now;
+  showNotification(
+    'RO',
+    'RO dilue la base uniquement. Les ajouts (mL/L, g/L) restent fixes: relance Autofit ou réajuste les sliders.',
+    'warning'
+  );
+}
+
+function setStepState(el, done, active){
+  if(!el) return;
+  el.classList.toggle('done', !!done);
+  el.classList.toggle('active', !!active);
+}
+
+function writeMineralSide(side, profile){
+  if(!side || !profile) return;
+  side.so4.textContent = fmt(profile.so4,1);
+  side.cl.textContent = fmt(profile.cl,1);
+  side.alk.textContent = fmt(profile.alk,1);
+  side.mg.textContent = fmt(profile.mg,1);
+  side.na.textContent = fmt(profile.na,1);
+  side.ca.textContent = fmt(profile.ca,1);
+}
+
+function syncAutofitCompareCard(){
+  const compare = WORKFLOW.compare;
+  if(!DOM.prod.compareWrap) return;
+  if(!compare){
+    DOM.prod.compareWrap.hidden = true;
+    return;
+  }
+  DOM.prod.compareWrap.hidden = false;
+  if(DOM.prod.compareLabel) DOM.prod.compareLabel.textContent = compare.label || 'caps + goût';
+  writeMineralSide(DOM.prod.before, compare.before);
+  writeMineralSide(DOM.prod.after, compare.after);
+}
+
+function setMainCta(action, label){
+  if(!DOM.prod.mainCta) return;
+  DOM.prod.mainCta.dataset.action = action;
+  DOM.prod.mainCta.textContent = label;
+  DOM.prod.mainCta.classList.remove('btn-warm','btn-primary');
+  DOM.prod.mainCta.classList.add(action === 'autofit' ? 'btn-warm' : 'btn-primary');
+}
+
+function setDockPrimary(action, label){
+  if(!DOM.mobile.dockPrimary) return;
+  DOM.mobile.dockPrimary.dataset.action = action;
+  const shortLabelMap = {
+    autofit: '🧠 Autofit',
+    dosages: '📊 Dosages',
+    balance: '⚖️ Balance'
+  };
+  DOM.mobile.dockPrimary.textContent = shortLabelMap[action] || label;
+}
+function dosageCtaElements(){
+  return [DOM.prod.mainCta, DOM.mobile.dockPrimary, DOM.prod.dosageBtnCard, DOM.prod.dosageBtnAdv].filter(Boolean);
+}
+function setDosageCtaState(active){
+  dosageCtaElements().forEach(el=>{
+    el.classList.toggle('btn-dosage-target', !!active);
+    if(!active) el.classList.remove('btn-cta-pulse');
+  });
+}
+function pulseDosageCta(){
+  const targets = dosageCtaElements();
+  if(!targets.length) return;
+  if(UI_HINTS.pulseTimeoutId){
+    clearTimeout(UI_HINTS.pulseTimeoutId);
+    UI_HINTS.pulseTimeoutId = null;
+  }
+  targets.forEach(el=>{
+    el.classList.remove('btn-cta-pulse');
+    void el.offsetWidth;
+    el.classList.add('btn-cta-pulse');
+  });
+  UI_HINTS.pulseTimeoutId = setTimeout(()=>{
+    targets.forEach(el=>el.classList.remove('btn-cta-pulse'));
+    UI_HINTS.pulseTimeoutId = null;
+  }, 2100);
+}
+
+function runPrimaryAction(action){
+  if(action === 'dosages'){
+    openDrawer('dos');
+    return;
+  }
+  if(action === 'balance'){
+    enterWeighMode();
+    return;
+  }
+  autofitSafe();
+}
+
+function syncProductionWorkflowState(state){
+  const signature = signatureForAutofit(state);
+  if(WORKFLOW.lastAutofitSignature && WORKFLOW.lastAutofitSignature !== signature){
+    WORKFLOW.autofitDone = false;
+    WORKFLOW.dosagesOpened = false;
+    WORKFLOW.paramsReviewed = false;
+    WORKFLOW.compare = null;
+  }
+}
+
+function updateProductionFlowUI(stateForReadiness=null){
+  const hasAutofit = !!WORKFLOW.autofitDone;
+  const hasDosages = !!WORKFLOW.dosagesOpened;
+  const inWeighMode = document.body.classList.contains('weigh-mode');
+  const state = stateForReadiness || getStateFromUI();
+  const dosageReady = isDosageReady(state);
+  const balanceReady = dosageReady && !!WORKFLOW.paramsReviewed;
+
+  let action = 'autofit';
+  let ctaLabel = '🧠 Lancer Autofit';
+  let stageText = "Étape 2/3: lance Autofit pour générer les dosages.";
+  let dockHint = 'Bouton principal: Autofit · ⚙️ pour réglages.';
+
+  if(hasAutofit && !hasDosages){
+    action = 'dosages';
+    ctaLabel = '📊 Ouvrir Dosages';
+    stageText = "Étape 3/3: ouvre Dosages pour passer à la pesée.";
+    dockHint = 'Bouton principal: ouvre Dosages.';
+  }else if(hasAutofit && hasDosages){
+    action = 'balance';
+    ctaLabel = inWeighMode ? '✅ Balance ouverte' : '⚖️ Ouvrir Balance';
+    stageText = inWeighMode
+      ? 'Checklist de pesée ouverte: coche au fur et à mesure.'
+      : 'Autofit fait. Tu peux peser dans Balance.';
+    dockHint = inWeighMode
+      ? 'Balance ouverte: coche chaque ajout.'
+      : 'Bouton principal: ouvre Balance.';
+  }
+
+  setStepState(DOM.prod.stepTargets, true, false);
+  setStepState(DOM.prod.stepAutofit, hasAutofit, !hasAutofit);
+  setStepState(DOM.prod.stepDosages, hasDosages, hasAutofit && !hasDosages);
+
+  const enteringDosagesStep = (action === 'dosages' && UI_HINTS.lastPrimaryAction !== 'dosages');
+  setMainCta(action, ctaLabel);
+  setDockPrimary(action, ctaLabel);
+  setDosageCtaState(action === 'dosages');
+  if(enteringDosagesStep) pulseDosageCta();
+  UI_HINTS.lastPrimaryAction = action;
+
+  if(DOM.prod.dosageCardCompact){
+    DOM.prod.dosageCardCompact.hidden = !dosageReady;
+  }
+  if(DOM.prod.dosageBtnAdv){
+    DOM.prod.dosageBtnAdv.classList.toggle('is-locked', !dosageReady);
+    DOM.prod.dosageBtnAdv.setAttribute('aria-disabled', dosageReady ? 'false' : 'true');
+    DOM.prod.dosageBtnAdv.title = dosageReady ? '' : 'Lance Autofit ou ajuste les sliders';
+  }
+  if(DOM.weigh.btn){
+    const showHeaderBalance = balanceReady || inWeighMode;
+    DOM.weigh.btn.classList.toggle('is-hidden', !showHeaderBalance);
+    if(showHeaderBalance) DOM.weigh.btn.removeAttribute('aria-hidden');
+    else DOM.weigh.btn.setAttribute('aria-hidden', 'true');
+    DOM.weigh.btn.classList.toggle('is-locked', !balanceReady);
+    DOM.weigh.btn.setAttribute('aria-disabled', balanceReady ? 'false' : 'true');
+    DOM.weigh.btn.title = balanceReady
+      ? 'Checklist de pesée plein écran'
+      : (dosageReady ? 'Passe d’abord par Dosages (volumes + forme CaCl₂)' : 'Lance Autofit ou ajuste les sliders');
+  }
+  if(DOM.weigh.btnDrawer){
+    DOM.weigh.btnDrawer.classList.toggle('is-locked', !balanceReady);
+    DOM.weigh.btnDrawer.setAttribute('aria-disabled', balanceReady ? 'false' : 'true');
+    DOM.weigh.btnDrawer.title = balanceReady
+      ? 'Ouvrir la checklist de pesée'
+      : (dosageReady ? 'Passe d’abord par Dosages (volumes + forme CaCl₂)' : 'Lance Autofit ou ajuste les sliders');
+  }
+
+  if(DOM.prod.stageCopy) DOM.prod.stageCopy.textContent = stageText;
+  if(DOM.mobile.dockHint) DOM.mobile.dockHint.textContent = dockHint;
+  syncAutofitCompareCard();
+  saveWorkflowState();
+}
+
+function setImpactValue(el, value){
+  if(!el) return;
+  el.textContent = fmt(value,1);
+}
+function setImpactDelta(el, value){
+  if(!el) return;
+  const v = Math.abs(value) < 0.05 ? 0 : value;
+  el.classList.remove('plus','minus','zero');
+  if(v > 0){
+    el.classList.add('plus');
+    el.textContent = `+${fmt(v,1)}`;
+  }else if(v < 0){
+    el.classList.add('minus');
+    el.textContent = `${fmt(v,1)}`;
+  }else{
+    el.classList.add('zero');
+    el.textContent = '0.0';
+  }
+}
+function setImpactGap(el, value, hard, soft){
+  if(!el) return;
+  const v = Math.abs(value) < 0.05 ? 0 : value;
+  const cls = diffClass(v, hard, soft);
+  el.classList.remove('good','warning','bad','zero');
+  el.classList.add(cls);
+  el.textContent = `${v>=0?'+':''}${fmt(v,1)}`;
+}
+function updateManualImpactPanel(final, state){
+  if(!DOM.impact.base.so4) return;
+  const base = final.baseD || computeDilutedBase(state.base);
+  const target = state.target || {};
+  const targetVals = {
+    so4: safeNum(target.so4_ppm, 0),
+    cl: safeNum(target.cl_ppm, 0),
+    alk: safeNum(target.alk_caco3_ppm, 0),
+    mg: safeNum(target.mg_ppm, 0),
+    na: safeNum(target.na_ppm, 0),
+    ca: safeNum(target.ca_ppm, 0)
+  };
+  const delta = {
+    so4: final.so4 - base.so4,
+    cl: final.cl - base.cl,
+    alk: final.alk - base.alk,
+    mg: final.mg - base.mg,
+    na: final.na - base.na,
+    ca: final.ca - base.ca
+  };
+
+  setImpactValue(DOM.impact.base.so4, base.so4);
+  setImpactValue(DOM.impact.base.cl, base.cl);
+  setImpactValue(DOM.impact.base.alk, base.alk);
+  setImpactValue(DOM.impact.base.mg, base.mg);
+  setImpactValue(DOM.impact.base.na, base.na);
+  setImpactValue(DOM.impact.base.ca, base.ca);
+
+  setImpactDelta(DOM.impact.delta.so4, delta.so4);
+  setImpactDelta(DOM.impact.delta.cl, delta.cl);
+  setImpactDelta(DOM.impact.delta.alk, delta.alk);
+  setImpactDelta(DOM.impact.delta.mg, delta.mg);
+  setImpactDelta(DOM.impact.delta.na, delta.na);
+  setImpactDelta(DOM.impact.delta.ca, delta.ca);
+
+  setImpactValue(DOM.impact.final.so4, final.so4);
+  setImpactValue(DOM.impact.final.cl, final.cl);
+  setImpactValue(DOM.impact.final.alk, final.alk);
+  setImpactValue(DOM.impact.final.mg, final.mg);
+  setImpactValue(DOM.impact.final.na, final.na);
+  setImpactValue(DOM.impact.final.ca, final.ca);
+
+  setImpactValue(DOM.impact.target.so4, targetVals.so4);
+  setImpactValue(DOM.impact.target.cl, targetVals.cl);
+  setImpactValue(DOM.impact.target.alk, targetVals.alk);
+  setImpactValue(DOM.impact.target.mg, targetVals.mg);
+  setImpactValue(DOM.impact.target.na, targetVals.na);
+  setImpactValue(DOM.impact.target.ca, targetVals.ca);
+
+  setImpactGap(DOM.impact.gap.so4, final.so4 - targetVals.so4, TOL.hard.so4, TOL.soft.so4);
+  setImpactGap(DOM.impact.gap.cl, final.cl - targetVals.cl, TOL.hard.cl, TOL.soft.cl);
+  setImpactGap(DOM.impact.gap.alk, final.alk - targetVals.alk, TOL.hard.alk, TOL.soft.alk);
+  setImpactGap(DOM.impact.gap.mg, final.mg - targetVals.mg, TOL.hard.mg, TOL.soft.mg);
+  setImpactGap(DOM.impact.gap.na, final.na - targetVals.na, TOL.hard.na, TOL.soft.na);
+  setImpactGap(DOM.impact.gap.ca, final.ca - targetVals.ca, 15, 35);
+
+  if(DOM.impact.ratioCaps){
+    const ratio = final.ratio === null ? '—' : final.ratio.toFixed(2);
+    const over = capOverages(final, state.caps);
+    const capWarn = [];
+    if(over.na > 1e-6) capWarn.push(`Na +${fmt(over.na,1)}`);
+    if(over.mg > 1e-6) capWarn.push(`Mg +${fmt(over.mg,1)}`);
+    if(over.ca > 1e-6) capWarn.push(`Ca +${fmt(over.ca,1)}`);
+    DOM.impact.ratioCaps.textContent = capWarn.length
+      ? `SO₄/Cl ${ratio} · Caps ⚠ ${capWarn.join(' · ')}`
+      : `SO₄/Cl ${ratio} · Caps OK`;
+  }
+}
+
+/* -------- Ratio mode (tile toggles) -------- */
+let ratioMode = 'so4cl'; // 'so4cl' or 'clso4'
+function loadRatioMode(){
+  try{
+    const m = localStorage.getItem('ratioMode');
+    if(m === 'clso4' || m === 'so4cl') ratioMode = m;
+  }catch(e){}
+}
+function saveRatioMode(){
+  try{ localStorage.setItem('ratioMode', ratioMode); }catch(e){}
+}
+function toggleRatioMode(){
+  ratioMode = (ratioMode === 'so4cl') ? 'clso4' : 'so4cl';
+  saveRatioMode();
+  render();
+  showNotification('Ratio', ratioMode === 'so4cl' ? 'Affichage: SO₄/Cl' : 'Affichage: Cl/SO₄', 'success');
+}
+
+function syncQuickTargetsFromMain(){
+  if(!DOM.quickTargets.mg || !DOM.quickTargets.na) return;
+  DOM.quickTargets.mg.value = DOM.target.mg?.value ?? DOM.quickTargets.mg.value;
+  DOM.quickTargets.na.value = DOM.target.na?.value ?? DOM.quickTargets.na.value;
+}
+function syncMainTargetsFromQuick(){
+  if(!DOM.quickTargets.mg || !DOM.quickTargets.na) return;
+  if(DOM.target.mg) DOM.target.mg.value = DOM.quickTargets.mg.value;
+  if(DOM.target.na) DOM.target.na.value = DOM.quickTargets.na.value;
+}
+function setQuickMgNaVisible(visible){
+  if(!DOM.quickTargets.wrap || !DOM.quickTargets.toggle) return;
+  DOM.quickTargets.wrap.hidden = !visible;
+  DOM.quickTargets.toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
+  DOM.quickTargets.toggle.textContent = visible ? '− Mg/Na rapides' : '+ Mg/Na rapides';
+  if(visible) syncQuickTargetsFromMain();
+  if(!HISTORY.applying && !_lockInternal) scheduleHistoryCommit(0);
+}
+function setQuickMineralsVisible(visible){
+  if(!DOM.quickRead.row || !DOM.quickRead.toggle) return;
+  DOM.quickRead.row.hidden = !visible;
+  DOM.quickRead.toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
+  DOM.quickRead.toggle.textContent = visible ? '− Mg/Na/Ca' : '+ Mg/Na/Ca';
+  DOM.quickRead.toggle.classList.toggle('is-active', visible);
+  if(!HISTORY.applying && !_lockInternal) scheduleHistoryCommit(0);
+}
+function setQuickReadExpanded(visible){
+  if(!DOM.quickRead.card || !DOM.quickRead.compact) return;
+  DOM.quickRead.card.classList.toggle('mobile-expanded', !!visible);
+  DOM.quickRead.compact.setAttribute('aria-expanded', visible ? 'true' : 'false');
+  if(DOM.quickRead.hint){
+    DOM.quickRead.hint.textContent = visible ? 'Tap pour replier ▴' : 'Tap pour détails ▾';
+  }
+  if(!HISTORY.applying && !_lockInternal) scheduleHistoryCommit(0);
+}
+function historyClone(value){
+  try{
+    return JSON.parse(JSON.stringify(value));
+  }catch(e){
+    return null;
+  }
+}
+function getActivePresetLabel(){
+  if(!DOM.ui.activePresetBadge || !DOM.ui.activePresetName) return '';
+  if(DOM.ui.activePresetBadge.classList.contains('is-hidden')) return '';
+  return String(DOM.ui.activePresetName.textContent || '').trim();
+}
+function applyStateToInputs(state){
+  if(!state || typeof state !== 'object') return;
+
+  const base = state.base || {};
+  const target = state.target || {};
+  const locks = state.locks || {};
+  const additions = state.additions || {};
+  const volumes = state.volumes || {};
+  const caps = state.caps || {};
+
+  if(DOM.base.salifert_dkh){
+    const alkBase = safeNum(base.alk_caco3_ppm, 9.3 * CHEM.DKH_TO_CACO3);
+    DOM.base.salifert_dkh.value = (alkBase / CHEM.DKH_TO_CACO3).toFixed(1);
+  }
+  if(DOM.base.so4) DOM.base.so4.value = safeNum(base.so4_ppm, 20);
+  if(DOM.base.cl)  DOM.base.cl.value  = safeNum(base.cl_ppm, 30);
+  if(DOM.base.mg)  DOM.base.mg.value  = safeNum(base.mg_ppm, 5);
+  if(DOM.base.na)  DOM.base.na.value  = safeNum(base.na_ppm, 12);
+  if(DOM.base.ca)  DOM.base.ca.value  = safeNum(base.ca_ppm, 95);
+  if(DOM.base.ro)  DOM.base.ro.value  = safeNum(base.ro_percent, 0);
+
+  if(DOM.target.so4) DOM.target.so4.value = safeNum(target.so4_ppm, 75);
+  if(DOM.target.cl)  DOM.target.cl.value  = safeNum(target.cl_ppm, 75);
+  if(DOM.target.alk) DOM.target.alk.value = safeNum(target.alk_caco3_ppm, 10);
+  if(DOM.target.mg)  DOM.target.mg.value  = safeNum(target.mg_ppm, 5);
+  if(DOM.target.na)  DOM.target.na.value  = safeNum(target.na_ppm, 12);
+  if(DOM.target.ca)  DOM.target.ca.value  = safeNum(target.ca_ppm, 95);
+
+  if(DOM.locks.mg) DOM.locks.mg.checked = !!locks.mg;
+  if(DOM.locks.na) DOM.locks.na.checked = !!locks.na;
+  if(DOM.locks.ca) DOM.locks.ca.checked = !!locks.ca;
+
+  if(DOM.add.ams) DOM.add.ams.value = safeNum(additions.ams_ml_per_l, 0);
+  if(DOM.add.phos) DOM.add.phos.value = safeNum(additions.phos75_ml_per_l, 0);
+  if(DOM.add.cacl2) DOM.add.cacl2.value = safeNum(additions.cacl2_g_per_l, 0);
+  if(DOM.add.gypsum) DOM.add.gypsum.value = safeNum(additions.gypsum_g_per_l, 0);
+  if(DOM.add.epsom) DOM.add.epsom.value = safeNum(additions.epsom_g_per_l, 0);
+  if(DOM.add.nacl) DOM.add.nacl.value = safeNum(additions.nacl_g_per_l, 0);
+
+  if(DOM.volumes.mash) DOM.volumes.mash.value = safeNum(volumes.mash_l, 550);
+  if(DOM.volumes.sparge) DOM.volumes.sparge.value = safeNum(volumes.sparge_l, 300);
+
+  if(DOM.caps.na) DOM.caps.na.value = safeNum(caps.na_max_ppm, 30);
+  if(DOM.caps.mg) DOM.caps.mg.value = safeNum(caps.mg_max_ppm, 10);
+  if(DOM.caps.ca) DOM.caps.ca.value = safeNum(caps.ca_max_ppm, 150);
+}
+function captureHistorySnapshot(){
+  const state = getStateFromUI();
+  const presetNameInput = document.getElementById('presetName');
+  const compareBefore = normalizeWorkflowProfile(WORKFLOW.compare?.before);
+  const compareAfter = normalizeWorkflowProfile(WORKFLOW.compare?.after);
+  const quickReadExpanded = !!DOM.quickRead.card?.classList.contains('mobile-expanded');
+
+  return {
+    state: historyClone({
+      base: state.base,
+      target: state.target,
+      locks: state.locks,
+      additions: state.additions,
+      volumes: state.volumes,
+      caps: state.caps
+    }),
+    workflow: historyClone({
+      lastAutofitSignature: (typeof WORKFLOW.lastAutofitSignature === 'string' && WORKFLOW.lastAutofitSignature.length)
+        ? WORKFLOW.lastAutofitSignature
+        : null,
+      autofitDone: !!WORKFLOW.autofitDone,
+      dosagesOpened: !!WORKFLOW.dosagesOpened,
+      compare: (compareBefore && compareAfter)
+        ? { label: String(WORKFLOW.compare?.label || 'caps + goût'), before: compareBefore, after: compareAfter }
+        : null
+    }),
+    ratioMode: (ratioMode === 'clso4' || ratioMode === 'so4cl') ? ratioMode : 'so4cl',
+    weighForm: String(DOM.dosage.cacl2WeighForm?.value || 'anhydrous'),
+    ui: {
+      quickMineralsVisible: !!(DOM.quickRead.row && !DOM.quickRead.row.hidden),
+      quickMgNaVisible: !!(DOM.quickTargets.wrap && !DOM.quickTargets.wrap.hidden),
+      quickReadExpanded
+    },
+    presets: Array.isArray(customPresets)
+      ? customPresets.map((p, idx)=>normalizePreset(p, `Preset ${idx+1}`))
+      : [],
+    editingPresetIdx: Number.isInteger(editingPresetIdx) ? editingPresetIdx : null,
+    presetName: String(presetNameInput?.value || ''),
+    presetEditor: readPresetFromEditor(presetNameInput?.value || ''),
+    activePreset: getActivePresetLabel()
+  };
+}
+function historySnapshotSignature(snapshot){
+  try{
+    return JSON.stringify(snapshot);
+  }catch(e){
+    return '';
+  }
+}
+function updateHistoryButtons(){
+  const canUndo = HISTORY.past.length > 0;
+  const canRedo = HISTORY.future.length > 0;
+  const touch = (buttons, enabled)=>{
+    buttons.forEach(btn=>{
+      btn.disabled = !enabled;
+      btn.classList.toggle('is-locked', !enabled);
+      btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    });
+  };
+  touch(DOM.history.undoBtns || [], canUndo);
+  touch(DOM.history.redoBtns || [], canRedo);
+}
+function scheduleHistoryCommit(delay=260){
+  if(HISTORY.applying || _lockInternal) return;
+  if(HISTORY.timerId){
+    clearTimeout(HISTORY.timerId);
+    HISTORY.timerId = null;
+  }
+  const d = Math.max(0, Number.isFinite(delay) ? delay : 0);
+  HISTORY.timerId = setTimeout(()=>{
+    HISTORY.timerId = null;
+    commitHistoryNow();
+  }, d);
+}
+function commitHistoryNow(){
+  if(HISTORY.applying || _lockInternal) return;
+  const snapshot = captureHistorySnapshot();
+  const sig = historySnapshotSignature(snapshot);
+  if(!HISTORY.current){
+    HISTORY.current = snapshot;
+    HISTORY.currentSig = sig;
+    updateHistoryButtons();
+    return;
+  }
+  if(sig === HISTORY.currentSig) return;
+  HISTORY.past.push(HISTORY.current);
+  if(HISTORY.past.length > HISTORY.limit) HISTORY.past.shift();
+  HISTORY.current = snapshot;
+  HISTORY.currentSig = sig;
+  HISTORY.future = [];
+  updateHistoryButtons();
+}
+function applyHistorySnapshot(snapshot){
+  if(!snapshot || typeof snapshot !== 'object') return;
+  HISTORY.applying = true;
+  _lockInternal = true;
+  try{
+    applyStateToInputs(snapshot.state || {});
+
+    const nextRatioMode = (snapshot.ratioMode === 'clso4' || snapshot.ratioMode === 'so4cl')
+      ? snapshot.ratioMode
+      : 'so4cl';
+    ratioMode = nextRatioMode;
+
+    if(DOM.dosage.cacl2WeighForm){
+      DOM.dosage.cacl2WeighForm.value = (snapshot.weighForm === 'dihydrate') ? 'dihydrate' : 'anhydrous';
+    }
+
+    const wf = snapshot.workflow || {};
+    WORKFLOW.lastAutofitSignature = (typeof wf.lastAutofitSignature === 'string' && wf.lastAutofitSignature.length)
+      ? wf.lastAutofitSignature
+      : null;
+    WORKFLOW.autofitDone = !!wf.autofitDone;
+    WORKFLOW.dosagesOpened = !!wf.dosagesOpened;
+    WORKFLOW.compare = (wf.compare && normalizeWorkflowProfile(wf.compare.before) && normalizeWorkflowProfile(wf.compare.after))
+      ? {
+          label: String(wf.compare.label || 'caps + goût'),
+          before: normalizeWorkflowProfile(wf.compare.before),
+          after: normalizeWorkflowProfile(wf.compare.after)
+        }
+      : null;
+
+    if(Array.isArray(snapshot.presets)){
+      customPresets = snapshot.presets.map((p, idx)=>normalizePreset(p, `Preset ${idx+1}`));
+      savePresets();
+    }
+
+    const idx = snapshot.editingPresetIdx;
+    editingPresetIdx = (Number.isInteger(idx) && idx >= 0 && idx < customPresets.length) ? idx : null;
+
+    const presetNameInput = document.getElementById('presetName');
+    if(presetNameInput) presetNameInput.value = String(snapshot.presetName || '');
+    if(snapshot.presetEditor) setPresetEditorValues(snapshot.presetEditor);
+
+    const ui = snapshot.ui || {};
+    setQuickReadExpanded(!!ui.quickReadExpanded);
+    setQuickMineralsVisible(!!ui.quickMineralsVisible);
+    setQuickMgNaVisible(!!ui.quickMgNaVisible);
+
+    renderPresets();
+    if(snapshot.activePreset) setActivePreset(snapshot.activePreset);
+    else setActivePreset(null);
+    updatePresetEditorUI();
+  }finally{
+    _lockInternal = false;
+  }
+  try{
+    render();
+  }finally{
+    HISTORY.applying = false;
+  }
+  updateHistoryButtons();
+}
+function undoHistory(){
+  if(!HISTORY.past.length){
+    showNotification('Historique', 'Rien à annuler.', 'warning');
+    return;
+  }
+  const target = HISTORY.past.pop();
+  if(HISTORY.current) HISTORY.future.push(HISTORY.current);
+  HISTORY.current = target;
+  HISTORY.currentSig = historySnapshotSignature(target);
+  applyHistorySnapshot(target);
+  showNotification('Historique', '↶ Action annulée.', 'success');
+}
+function redoHistory(){
+  if(!HISTORY.future.length){
+    showNotification('Historique', 'Rien à rétablir.', 'warning');
+    return;
+  }
+  const target = HISTORY.future.pop();
+  if(HISTORY.current) HISTORY.past.push(HISTORY.current);
+  HISTORY.current = target;
+  HISTORY.currentSig = historySnapshotSignature(target);
+  applyHistorySnapshot(target);
+  showNotification('Historique', '↷ Action rétablie.', 'success');
+}
+function initHistory(){
+  HISTORY.past = [];
+  HISTORY.future = [];
+  HISTORY.current = captureHistorySnapshot();
+  HISTORY.currentSig = historySnapshotSignature(HISTORY.current);
+  if(HISTORY.timerId){
+    clearTimeout(HISTORY.timerId);
+    HISTORY.timerId = null;
+  }
+  updateHistoryButtons();
+}
+
+function getInputStepDecimals(input){
+  if(!input) return 0;
+  const stepAttr = String(input.step || '');
+  if(!stepAttr || stepAttr === 'any') return 0;
+  const dot = stepAttr.indexOf('.');
+  if(dot === -1) return 0;
+  return Math.max(0, stepAttr.length - dot - 1);
+}
+function applyStepperDelta(input, dir, repeat=1){
+  if(!input || !Number.isFinite(dir) || !dir) return;
+  const forcedStepRaw = parseFloat(input.dataset.stepperStep || '');
+  const hasForcedStep = Number.isFinite(forcedStepRaw) && forcedStepRaw > 0;
+  const stepRaw = parseFloat(input.step);
+  const step = hasForcedStep
+    ? forcedStepRaw
+    : ((Number.isFinite(stepRaw) && stepRaw > 0) ? stepRaw : 1);
+  const min = (input.min !== '') ? parseFloat(input.min) : -Infinity;
+  const max = (input.max !== '') ? parseFloat(input.max) : Infinity;
+  const loops = Math.max(1, Math.floor(repeat));
+  let next = safeNum(input.value, 0);
+  for(let i=0; i<loops; i++){
+    next += (dir > 0 ? step : -step);
+    if(Number.isFinite(min)) next = Math.max(min, next);
+    if(Number.isFinite(max)) next = Math.min(max, next);
+  }
+
+  const decimals = getInputStepDecimals(input);
+  next = roundTo(next, decimals);
+  const nextValue = String(next);
+  if(input.value === nextValue) return;
+  input.value = nextValue;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+const STEPPER_HOLD = {
+  timeoutId: null,
+  intervalId: null,
+  btn: null,
+  input: null,
+  dir: 0,
+  ticks: 0
+};
+function clearStepperHold(){
+  if(STEPPER_HOLD.timeoutId){
+    clearTimeout(STEPPER_HOLD.timeoutId);
+    STEPPER_HOLD.timeoutId = null;
+  }
+  if(STEPPER_HOLD.intervalId){
+    clearInterval(STEPPER_HOLD.intervalId);
+    STEPPER_HOLD.intervalId = null;
+  }
+  if(STEPPER_HOLD.btn){
+    STEPPER_HOLD.btn.classList.remove('is-holding');
+    STEPPER_HOLD.btn = null;
+  }
+  STEPPER_HOLD.input = null;
+  STEPPER_HOLD.dir = 0;
+  STEPPER_HOLD.ticks = 0;
+}
+function stepperRepeatSize(ticks){
+  if(ticks < 8) return 1;
+  if(ticks < 20) return 2;
+  return 5;
+}
+function startStepperHold(input, dir, btn){
+  clearStepperHold();
+  STEPPER_HOLD.btn = btn || null;
+  STEPPER_HOLD.input = input;
+  STEPPER_HOLD.dir = dir;
+  STEPPER_HOLD.timeoutId = setTimeout(()=>{
+    if(STEPPER_HOLD.btn) STEPPER_HOLD.btn.classList.add('is-holding');
+    STEPPER_HOLD.intervalId = setInterval(()=>{
+      if(!STEPPER_HOLD.input || !STEPPER_HOLD.dir) return;
+      STEPPER_HOLD.ticks += 1;
+      applyStepperDelta(STEPPER_HOLD.input, STEPPER_HOLD.dir, stepperRepeatSize(STEPPER_HOLD.ticks));
+    }, 110);
+  }, 340);
+}
+function initTargetSteppers(){
+  document.body.addEventListener('pointerdown', (e)=>{
+    const btn = e.target.closest('.stepper-btn');
+    if(!btn) return;
+    if(typeof e.button === 'number' && e.button !== 0) return;
+    const targetId = btn.dataset.target;
+    const dir = parseFloat(btn.dataset.dir || '0');
+    if(!targetId || !Number.isFinite(dir) || !dir) return;
+    const input = document.getElementById(targetId);
+    if(!input) return;
+    e.preventDefault();
+    btn.dataset.pointerAction = '1';
+    applyStepperDelta(input, dir);
+    startStepperHold(input, dir, btn);
+  });
+  ['pointerup','pointercancel','blur'].forEach(evt=>{
+    window.addEventListener(evt, clearStepperHold);
+  });
+  document.body.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.stepper-btn');
+    if(!btn) return;
+    if(btn.dataset.pointerAction === '1'){
+      btn.dataset.pointerAction = '0';
+      return;
+    }
+    const targetId = btn.dataset.target;
+    const dir = parseFloat(btn.dataset.dir || '0');
+    if(!targetId || !Number.isFinite(dir) || !dir) return;
+    const input = document.getElementById(targetId);
+    if(!input) return;
+    e.preventDefault();
+    applyStepperDelta(input, dir);
+  });
+}
+
+function openAdvancedAccordion(id){
+  const target = document.getElementById(id);
+  const items = Array.from(document.querySelectorAll('#advBody .adv-accordion'));
+  if(!target || !items.length) return;
+  items.forEach(item=>{ item.open = (item === target); });
+}
+function collapseAdvancedAccordions(){
+  const items = Array.from(document.querySelectorAll('#advBody .adv-accordion'));
+  if(!items.length) return;
+  items.forEach(item=>{ item.open = false; });
+}
+function initAdvancedAccordion(){
+  const items = Array.from(document.querySelectorAll('#advBody .adv-accordion'));
+  if(!items.length) return;
+  collapseAdvancedAccordions();
+  items.forEach(item=>{
+    item.addEventListener('toggle', ()=>{
+      if(!item.open) return;
+      items.forEach(other=>{ if(other !== item) other.open = false; });
+    });
+  });
+}
+
+/* -------- UI -> State -------- */
+function safeNum(v, fallback=0){
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+function clampNonNeg(n){ return Math.max(0, Number.isFinite(n) ? n : 0); }
+function readBounded(input, fallback=0, min=0, max=Infinity){
+  const raw = safeNum(input?.value, fallback);
+  const bounded = clamp(raw, min, max);
+  if(input && raw !== bounded) input.value = String(bounded);
+  return bounded;
+}
+
+function getStateFromUI(){
+  const sal = readBounded(DOM.base.salifert_dkh, 0, 0, 60);
+  const alk = sal * CHEM.DKH_TO_CACO3;
+  if(DOM.base.alk_base_ppm) DOM.base.alk_base_ppm.value = fmt(alk,1);
+
+  const baseSO4 = readBounded(DOM.base.so4, 0, 0);
+  const baseCl  = readBounded(DOM.base.cl, 0, 0);
+  const baseMg  = readBounded(DOM.base.mg, 0, 0);
+  const baseNa  = readBounded(DOM.base.na, 0, 0);
+  const baseCa  = readBounded(DOM.base.ca, 0, 0);
+  const roPct   = readBounded(DOM.base.ro, 0, 0, 100);
+
+  const tgtSO4 = readBounded(DOM.target.so4, 0, 0);
+  const tgtCl  = readBounded(DOM.target.cl, 0, 0);
+  const tgtAlk = readBounded(DOM.target.alk, 0, 0);
+
+  const tgtMg  = readBounded(DOM.target.mg, 0, 0);
+  const tgtNa  = readBounded(DOM.target.na, 0, 0);
+  const tgtCa  = readBounded(DOM.target.ca, 0, 0);
+
+  const addAms   = readBounded(DOM.add.ams, 0, 0);
+  const addPhos  = readBounded(DOM.add.phos, 0, 0);
+  const addCaCl2 = readBounded(DOM.add.cacl2, 0, 0);
+  const addGyps  = readBounded(DOM.add.gypsum, 0, 0);
+  const addEpsom = readBounded(DOM.add.epsom, 0, 0);
+  const addNaCl  = readBounded(DOM.add.nacl, 0, 0);
+
+  const mashL = readBounded(DOM.volumes.mash, 0, 0);
+  const spargeL = readBounded(DOM.volumes.sparge, 0, 0);
+
+  const capNa = readBounded(DOM.caps.na, 30, 0, 200);
+  const capMg = readBounded(DOM.caps.mg, 10, 0, 200);
+  const capCa = readBounded(DOM.caps.ca, 150, 0, 400);
+
+  return {
+    base: {
+      alk_caco3_ppm: alk,
+      so4_ppm: baseSO4,
+      cl_ppm:  baseCl,
+      mg_ppm:  baseMg,
+      na_ppm:  baseNa,
+      ca_ppm:  baseCa,
+      ro_percent: roPct
+    },
+    target: {
+      so4_ppm: tgtSO4,
+      cl_ppm:  tgtCl,
+      alk_caco3_ppm: tgtAlk,
+      mg_ppm:  tgtMg,
+      na_ppm:  tgtNa,
+      ca_ppm:  tgtCa
+    },
+    locks: { mg: !!DOM.locks.mg?.checked, na: !!DOM.locks.na?.checked, ca: !!DOM.locks.ca?.checked },
+    additions: {
+      ams_ml_per_l: addAms,
+      phos75_ml_per_l: addPhos,
+      cacl2_g_per_l: addCaCl2,
+      gypsum_g_per_l: addGyps,
+      epsom_g_per_l: addEpsom,
+      nacl_g_per_l: addNaCl
+    },
+    volumes: {
+      mash_l: mashL,
+      sparge_l: spargeL
+    },
+    caps: {
+      na_max_ppm: capNa,
+      mg_max_ppm: capMg,
+      ca_max_ppm: capCa
+    }
+  };
+}
+
+function computeDilutedBase(base){
+  const f = (100 - base.ro_percent)/100;
+  return {
+    so4: base.so4_ppm * f,
+    cl:  base.cl_ppm  * f,
+    mg:  base.mg_ppm  * f,
+    na:  base.na_ppm  * f,
+    ca:  base.ca_ppm  * f,
+    alk: base.alk_caco3_ppm * f
+  };
+}
+
+function computeFinalProfile(state){
+  const baseD = computeDilutedBase(state.base);
+  const a = state.additions;
+
+  const so4 = baseD.so4 + (a.ams_ml_per_l * CHEM.AMS.so4) + (a.gypsum_g_per_l * CHEM.GYPSUM_2H2O.so4) + (a.epsom_g_per_l * CHEM.EPSOM_7H2O.so4);
+  const cl  = baseD.cl  + (a.ams_ml_per_l * CHEM.AMS.cl)  + (a.cacl2_g_per_l * CHEM.CACL2_ANHYDROUS.cl) + (a.nacl_g_per_l * CHEM.NACL.cl);
+  const mg  = baseD.mg  + (a.epsom_g_per_l * CHEM.EPSOM_7H2O.mg);
+  const na  = baseD.na  + (a.nacl_g_per_l * CHEM.NACL.na);
+  const ca  = baseD.ca  + (a.cacl2_g_per_l * CHEM.CACL2_ANHYDROUS.ca) + (a.gypsum_g_per_l * CHEM.GYPSUM_2H2O.ca);
+  const alk = baseD.alk + (a.ams_ml_per_l * CHEM.AMS.alk) + (a.phos75_ml_per_l * CHEM.PHOS75.alk);
+
+  const ratio = (cl > 1e-6) ? (so4 / cl) : null;
+  const ratioInv = (so4 > 1e-6) ? (cl / so4) : null;
+  return { so4, cl, mg, na, ca, alk, ratio, ratioInv, baseD };
+}
+
+function applyLocksToTargets(state){
+  const baseD = computeDilutedBase(state.base);
+
+  if(DOM.target.mg){
+    if(state.locks.mg){
+      _lockInternal = true;
+      DOM.target.mg.readOnly = true;
+      DOM.target.mg.value = fmt(baseD.mg,1);
+      _lockInternal = false;
+    } else DOM.target.mg.readOnly = false;
+  }
+
+  if(DOM.target.na){
+    if(state.locks.na){
+      _lockInternal = true;
+      DOM.target.na.readOnly = true;
+      DOM.target.na.value = fmt(baseD.na,1);
+      _lockInternal = false;
+    } else DOM.target.na.readOnly = false;
+  }
+
+  if(DOM.target.ca){
+    if(state.locks.ca){
+      _lockInternal = true;
+      DOM.target.ca.readOnly = true;
+      DOM.target.ca.value = fmt(baseD.ca,0);
+      _lockInternal = false;
+    } else DOM.target.ca.readOnly = false;
+  }
+}
+
+function diffClass(v, hard=5, soft=15){
+  const abs = Math.abs(v);
+  if(abs <= hard) return 'good';
+  if(abs <= soft) return 'warning';
+  return 'bad';
+}
+function paintHudDiff(el, v, hard=5, soft=15){
+  if(!el) return;
+  const cls = diffClass(v, hard, soft);
+  el.className = `diff ${cls}`;
+  el.textContent = `${v>=0?'+':''}${fmt(v,1)}`;
+}
+function setWarnClass(groupEl,val,warnAt,dangerAt){
+  if(!groupEl) return;
+  groupEl.classList.remove('warn','danger');
+  if(val>=dangerAt) groupEl.classList.add('danger');
+  else if(val>=warnAt) groupEl.classList.add('warn');
+}
+function capOverages(final, caps){
+  return {
+    na: Math.max(0, final.na - caps.na_max_ppm),
+    mg: Math.max(0, final.mg - caps.mg_max_ppm),
+    ca: Math.max(0, final.ca - caps.ca_max_ppm)
+  };
+}
+function updateStatusBadge(final, target, state){
+  const dSO4=Math.abs(final.so4-target.so4_ppm);
+  const dCl =Math.abs(final.cl-target.cl_ppm);
+  const dAlk=Math.abs(final.alk-target.alk_caco3_ppm);
+  const dMg = state.locks.mg ? 0 : Math.abs(final.mg-target.mg_ppm);
+  const dNa = state.locks.na ? 0 : Math.abs(final.na-target.na_ppm);
+
+  const over = capOverages(final, state.caps);
+  const capsOver = [];
+  if(over.na > 1e-6) capsOver.push(`Na +${fmt(over.na,1)}`);
+  if(over.mg > 1e-6) capsOver.push(`Mg +${fmt(over.mg,1)}`);
+  if(over.ca > 1e-6) capsOver.push(`Ca +${fmt(over.ca,1)}`);
+
+  function setBoth(cls, txt, title){
+    DOM.ui.statusBadge.className = `status-badge ${cls}`;
+    DOM.ui.statusBadge.textContent = txt;
+    DOM.ui.statusBadge.title = title || '';
+    if(DOM.ui.statusBadgeMobile){
+      DOM.ui.statusBadgeMobile.className = `status-badge ${cls}`;
+      DOM.ui.statusBadgeMobile.textContent = txt;
+      DOM.ui.statusBadgeMobile.title = title || '';
+    }
+  }
+
+  if(capsOver.length){
+    setBoth('needs-adjustment','🔴 Cap dépassé', `Caps dépassés: ${capsOver.join(' · ')}`);
+    return;
+  }
+
+  const allGood =
+    dSO4 <= TOL.hard.so4 &&
+    dCl  <= TOL.hard.cl  &&
+    dAlk <= TOL.hard.alk &&
+    dMg  <= TOL.hard.mg  &&
+    dNa  <= TOL.hard.na;
+
+  const almost =
+    dSO4 <= TOL.soft.so4 &&
+    dCl  <= TOL.soft.cl  &&
+    dAlk <= TOL.soft.alk &&
+    dMg  <= TOL.soft.mg  &&
+    dNa  <= TOL.soft.na;
+  const staleAutofit = !!WORKFLOW.lastAutofitSignature && !WORKFLOW.autofitDone;
+
+  if(allGood){
+    if(staleAutofit){
+      setBoth('almost-ready','🟡 Refaire Autofit','Une valeur a changé depuis le dernier Autofit');
+    }else{
+      setBoth('ready','🟢 Prêt','Écarts dans les tolérances et caps respectés');
+    }
+  }else if(almost){
+    setBoth('almost-ready','🟡 Presque bon','Solution proche: petits écarts restants');
+  }else{
+    setBoth('needs-adjustment','🔴 Ajuster','Ajuste SO₄ / Cl / Alk (et Mg/Na si non lock)');
+  }
+}
+
+function showNotification(title,message,type='success'){
+  const existing=document.querySelector('.notification');
+  if(existing) existing.remove();
+  const n=document.createElement('div');
+  const safeType = ['success','warning','error'].includes(type) ? type : 'success';
+  n.className=`notification ${safeType}`;
+  n.setAttribute('role','status');
+  n.setAttribute('aria-live','polite');
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'notification-close';
+  closeBtn.setAttribute('aria-label', 'Fermer la notification');
+  closeBtn.textContent = '×';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'notification-title';
+  titleEl.textContent = String(title ?? '');
+
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'notification-body';
+  bodyEl.textContent = String(message ?? '');
+
+  n.appendChild(closeBtn);
+  n.appendChild(titleEl);
+  n.appendChild(bodyEl);
+  document.body.appendChild(n);
+  closeBtn.addEventListener('click',()=>n.remove());
+  setTimeout(()=>{ if(n.parentNode) n.remove(); },5200);
+}
+
+/* ---------- Ratio tagging ---------- */
+function tagSO4Cl(r){
+  if(r === null || !Number.isFinite(r)) return '—';
+  if(r < 0.4) return 'Trop malté (NEIPA)';
+  if(r < 0.6) return 'Très malté (German Lager)';
+  if(r < 0.8) return 'Malté (Porter, Altbier…)';
+  if(r < 1.5) return 'Équilibré';
+  if(r < 2.0) return 'Un peu d’amertume';
+  if(r < 4.0) return 'Amer (APA, IPA)';
+  if(r < 9.0) return 'Très amer (IPA, DIPA)';
+  return 'Trop amer';
+}
+function tagClSO4(r){
+  if(r === null || !Number.isFinite(r)) return '—';
+  if(r >= 2.50) return 'Trop malté (NEIPA)';
+  if(r >= 1.67) return 'Très malté (German Lager)';
+  if(r >= 1.25) return 'Malté (Porter, Altbier…)';
+  if(r >= 0.67) return 'Équilibré';
+  if(r >= 0.50) return 'Un peu d’amertume';
+  if(r >= 0.25) return 'Amer (APA, IPA)';
+  if(r >= 0.11) return 'Très amer (IPA, DIPA)';
+  return 'Trop amer';
+}
+
+/* ---------- Mode Balance helpers ---------- */
+function makeWeighItem(id, name, grams){
+  const g = Math.max(0, parseFloat(grams)||0);
+  if(g < 0.05) return null;
+
+  const nice = fmt(g,1);
+  const row = document.createElement('div');
+  row.className = 'weigh-item';
+
+  const left = document.createElement('div');
+  left.className = 'weigh-left';
+
+  const chk = document.createElement('button');
+  chk.type = 'button';
+  chk.className = 'weigh-check';
+  chk.setAttribute('data-id', id);
+  chk.setAttribute('data-checked', '0');
+  chk.setAttribute('aria-pressed', 'false');
+  chk.setAttribute('aria-label', `Marquer ${name} comme pesé`);
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'weigh-name';
+  nameEl.textContent = name;
+
+  left.appendChild(chk);
+  left.appendChild(nameEl);
+
+  const right = document.createElement('div');
+  const val = document.createElement('span');
+  val.className = 'weigh-val';
+  val.textContent = nice;
+  const unit = document.createElement('span');
+  unit.className = 'weigh-unit';
+  unit.textContent = 'g';
+  right.appendChild(val);
+  right.appendChild(unit);
+
+  row.appendChild(left);
+  row.appendChild(right);
+
+  chk.addEventListener('click', ()=>{
+    const on = chk.getAttribute('data-checked') === '1';
+    chk.setAttribute('data-checked', on ? '0' : '1');
+    chk.setAttribute('aria-pressed', on ? 'false' : 'true');
+    chk.textContent = on ? '' : '✓';
+  });
+
+  return row;
+}
+function renderWeighModeLists(){
+  DOM.weigh.mashList.innerHTML = '';
+  DOM.weigh.spargeList.innerHTML = '';
+
+  let hiddenMash = 0;
+  let hiddenSpar = 0;
+
+  const mashItems = [
+    makeWeighItem('m_ams','AMS', DOM.out.mash_ams_g.textContent),
+    makeWeighItem('m_phos','Phospho 75%', DOM.out.mash_phos_g.textContent),
+    makeWeighItem('m_cacl2','CaCl₂ (à peser)', DOM.out.mash_cacl2_g.textContent),
+    makeWeighItem('m_gyp','Gypse', DOM.out.mash_gypsum_g.textContent),
+    makeWeighItem('m_eps','Epsom', DOM.out.mash_epsom_g.textContent),
+    makeWeighItem('m_nacl','NaCl', DOM.out.mash_nacl_g.textContent)
+  ];
+  mashItems.forEach(it=>{ if(it) DOM.weigh.mashList.appendChild(it); else hiddenMash++; });
+
+  const spargeItems = [
+    makeWeighItem('s_ams','AMS', DOM.out.sparge_ams_g.textContent),
+    makeWeighItem('s_phos','Phospho 75%', DOM.out.sparge_phos_g.textContent),
+    makeWeighItem('s_cacl2','CaCl₂ (à peser)', DOM.out.sparge_cacl2_g.textContent),
+    makeWeighItem('s_gyp','Gypse', DOM.out.sparge_gypsum_g.textContent),
+    makeWeighItem('s_eps','Epsom', DOM.out.sparge_epsom_g.textContent),
+    makeWeighItem('s_nacl','NaCl', DOM.out.sparge_nacl_g.textContent)
+  ];
+  spargeItems.forEach(it=>{ if(it) DOM.weigh.spargeList.appendChild(it); else hiddenSpar++; });
+
+  const wf = DOM.dosage.cacl2WeighForm.value;
+  DOM.weigh.mashMeta.textContent =
+`Volumes:
+Empâtage ${fmt(safeNum(DOM.volumes.mash.value,0),0)} L
+
+CaCl₂ pesée: ${wf}
+Équiv. autre forme CaCl₂: ${DOM.out.mash_cacl2_alt_g.textContent} g
+
+Masqués (0g): ${hiddenMash}`;
+
+  DOM.weigh.spargeMeta.textContent =
+`Volumes:
+Rinçage ${fmt(safeNum(DOM.volumes.sparge.value,0),0)} L
+
+CaCl₂ pesée: ${wf}
+Équiv. autre forme CaCl₂: ${DOM.out.sparge_cacl2_alt_g.textContent} g
+
+Masqués (0g): ${hiddenSpar}`;
+
+  const s0 = getStateFromUI();
+  applyLocksToTargets(s0);
+  const s = getStateFromUI();
+  const final = computeFinalProfile(s);
+  const ratio = final.ratio===null ? '—' : final.ratio.toFixed(2);
+  const ratioInv = final.ratioInv===null ? '—' : final.ratioInv.toFixed(2);
+  DOM.weigh.sub.textContent =
+`SO₄ ${final.so4.toFixed(1)} | Cl ${final.cl.toFixed(1)} | SO₄/Cl ${ratio} (Cl/SO₄ ${ratioInv}) | Alk ${final.alk.toFixed(1)}
+Mg ${final.mg.toFixed(1)} | Na ${final.na.toFixed(1)} | Ca ${final.ca.toFixed(1)}`;
+}
+function enterWeighMode(){
+  if(!isDosageReady()){
+    if(hasStaleAutofitAdditions()){
+      showNotification('Balance', 'Autofit obsolète après modification: relance Autofit (ou ajuste les sliders) avant Balance.', 'warning');
+    }else{
+      showNotification('Balance', 'Lance Autofit ou fais un ajustement manuel (sliders) d’abord.', 'warning');
+    }
+    return;
+  }
+  if(!WORKFLOW.paramsReviewed){
+    showNotification('Balance', 'Passe d’abord par “Dosages” pour vérifier Empâtage/Rinçage et la forme CaCl₂.', 'warning');
+    openDrawer('dos');
+    return;
+  }
+  if(WORKFLOW.autofitDone) WORKFLOW.dosagesOpened = true;
+  document.body.classList.add('weigh-mode');
+  if(DOM.weigh.screen) DOM.weigh.screen.scrollTop = 0;
+  renderWeighModeLists();
+  updateProductionFlowUI();
+}
+function exitWeighMode(){
+  document.body.classList.remove('weigh-mode');
+  updateProductionFlowUI();
+}
+
+/**
+ * Dosages-only (toggle CaCl2 weigh form must not call render())
+ */
+function renderDosagesOnly(){
+  const state = getStateFromUI();
+  const a = state.additions;
+  const v = state.volumes;
+
+  const mashAMSml = a.ams_ml_per_l * v.mash_l;
+  const mashPHOSml = a.phos75_ml_per_l * v.mash_l;
+  const sparAMSml = a.ams_ml_per_l * v.sparge_l;
+  const sparPHOSml = a.phos75_ml_per_l * v.sparge_l;
+
+  DOM.out.mash_ams_ml.textContent = fmt(mashAMSml,1);
+  DOM.out.mash_ams_g.textContent  = fmt(mashAMSml * CHEM.DENSITY.AMS_g_per_ml,1);
+  DOM.out.mash_phos_ml.textContent = fmt(mashPHOSml,1);
+  DOM.out.mash_phos_g.textContent  = fmt(mashPHOSml * CHEM.DENSITY.PHOS75_g_per_ml,1);
+
+  DOM.out.sparge_ams_ml.textContent = fmt(sparAMSml,1);
+  DOM.out.sparge_ams_g.textContent  = fmt(sparAMSml * CHEM.DENSITY.AMS_g_per_ml,1);
+  DOM.out.sparge_phos_ml.textContent = fmt(sparPHOSml,1);
+  DOM.out.sparge_phos_g.textContent  = fmt(sparPHOSml * CHEM.DENSITY.PHOS75_g_per_ml,1);
+
+  const mashCaCl2g_anh = a.cacl2_g_per_l * v.mash_l;
+  const sparCaCl2g_anh = a.cacl2_g_per_l * v.sparge_l;
+
+  const mashGypsg = a.gypsum_g_per_l * v.mash_l;
+  const sparGypsg = a.gypsum_g_per_l * v.sparge_l;
+
+  const mashEpsg = a.epsom_g_per_l * v.mash_l;
+  const sparEpsg = a.epsom_g_per_l * v.sparge_l;
+
+  const mashNaClg = a.nacl_g_per_l * v.mash_l;
+  const sparNaClg = a.nacl_g_per_l * v.sparge_l;
+
+  DOM.out.mash_gypsum_g.textContent = fmt(mashGypsg,1);
+  DOM.out.mash_epsom_g.textContent  = fmt(mashEpsg,1);
+  DOM.out.mash_nacl_g.textContent   = fmt(mashNaClg,1);
+
+  DOM.out.sparge_gypsum_g.textContent = fmt(sparGypsg,1);
+  DOM.out.sparge_epsom_g.textContent  = fmt(sparEpsg,1);
+  DOM.out.sparge_nacl_g.textContent   = fmt(sparNaClg,1);
+
+  const weighForm = DOM.dosage.cacl2WeighForm.value;
+  const DIHYDRATE_FACTOR = 361/273;
+
+  const mashToWeigh = (weighForm === "dihydrate") ? mashCaCl2g_anh * DIHYDRATE_FACTOR : mashCaCl2g_anh;
+  const sparToWeigh = (weighForm === "dihydrate") ? sparCaCl2g_anh * DIHYDRATE_FACTOR : sparCaCl2g_anh;
+
+  const mashAlt = (weighForm === "dihydrate") ? mashCaCl2g_anh : mashCaCl2g_anh * DIHYDRATE_FACTOR;
+  const sparAlt = (weighForm === "dihydrate") ? sparCaCl2g_anh : sparCaCl2g_anh * DIHYDRATE_FACTOR;
+
+  DOM.out.mash_cacl2_g.textContent = fmt(mashToWeigh,1);
+  DOM.out.sparge_cacl2_g.textContent = fmt(sparToWeigh,1);
+  DOM.out.mash_cacl2_alt_g.textContent = fmt(mashAlt,1);
+  DOM.out.sparge_cacl2_alt_g.textContent = fmt(sparAlt,1);
+
+  updateDosageVisuals();
+  updateDosageSummary();
+
+  if(document.body.classList.contains('weigh-mode')){
+    renderWeighModeLists();
+  }
+}
+function updateDosageSummary(){
+  const s = getStateFromUI();
+  const mashEntries = [
+    { label:'AMS', v:parseFloat(DOM.out.mash_ams_g.textContent)||0 },
+    { label:'Phos75', v:parseFloat(DOM.out.mash_phos_g.textContent)||0 },
+    { label:'CaCl₂', v:parseFloat(DOM.out.mash_cacl2_g.textContent)||0 },
+    { label:'Gypse', v:parseFloat(DOM.out.mash_gypsum_g.textContent)||0 },
+    { label:'Epsom', v:parseFloat(DOM.out.mash_epsom_g.textContent)||0 },
+    { label:'NaCl', v:parseFloat(DOM.out.mash_nacl_g.textContent)||0 }
+  ];
+  const spargeEntries = [
+    { label:'AMS', v:parseFloat(DOM.out.sparge_ams_g.textContent)||0 },
+    { label:'Phos75', v:parseFloat(DOM.out.sparge_phos_g.textContent)||0 },
+    { label:'CaCl₂', v:parseFloat(DOM.out.sparge_cacl2_g.textContent)||0 },
+    { label:'Gypse', v:parseFloat(DOM.out.sparge_gypsum_g.textContent)||0 },
+    { label:'Epsom', v:parseFloat(DOM.out.sparge_epsom_g.textContent)||0 },
+    { label:'NaCl', v:parseFloat(DOM.out.sparge_nacl_g.textContent)||0 }
+  ];
+  const toLine = (entries)=>{
+    const actives = entries.filter(x=>x.v>0.01);
+    if(!actives.length) return 'Aucun ajout';
+    return actives.map(x=>`${x.label} ${fmt(x.v,1)}g`).join(' · ');
+  };
+  const hasAny = [...mashEntries, ...spargeEntries].some(x=>x.v>0.01);
+  if(!hasAny){
+    DOM.mobile.dosageSummary.textContent =
+`Aucun ajout pour l’instant.
+Tape 🧠 Autofit puis “Dosages”/“Balance”.`;
+    return;
+  }
+  const txt =
+`Empâtage ${fmt(s.volumes.mash_l,0)} L · Rinçage ${fmt(s.volumes.sparge_l,0)} L
+Empâtage: ${toLine(mashEntries)}
+Rinçage: ${toLine(spargeEntries)}`;
+  DOM.mobile.dosageSummary.textContent = txt;
+}
+
+function updateDosageVisuals(){
+  const checks=[
+    {id:'itemMashAMS', v:parseFloat(DOM.out.mash_ams_g.textContent)||0},
+    {id:'itemMashPHOS', v:parseFloat(DOM.out.mash_phos_g.textContent)||0},
+    {id:'itemMashCaCl2', v:parseFloat(DOM.out.mash_cacl2_g.textContent)||0},
+    {id:'itemMashGypsum', v:parseFloat(DOM.out.mash_gypsum_g.textContent)||0},
+    {id:'itemMashEpsom', v:parseFloat(DOM.out.mash_epsom_g.textContent)||0},
+    {id:'itemMashNaCl', v:parseFloat(DOM.out.mash_nacl_g.textContent)||0},
+    {id:'itemSpargeAMS', v:parseFloat(DOM.out.sparge_ams_g.textContent)||0},
+    {id:'itemSpargePHOS', v:parseFloat(DOM.out.sparge_phos_g.textContent)||0},
+    {id:'itemSpargeCaCl2', v:parseFloat(DOM.out.sparge_cacl2_g.textContent)||0},
+    {id:'itemSpargeGypsum', v:parseFloat(DOM.out.sparge_gypsum_g.textContent)||0},
+    {id:'itemSpargeEpsom', v:parseFloat(DOM.out.sparge_epsom_g.textContent)||0},
+    {id:'itemSpargeNaCl', v:parseFloat(DOM.out.sparge_nacl_g.textContent)||0}
+  ];
+  checks.forEach(x=>{
+    const el=document.getElementById(x.id);
+    if(!el) return;
+    if(x.v>0.01){ el.classList.add('has-value'); el.classList.remove('zero-value');}
+    else{ el.classList.remove('has-value'); el.classList.add('zero-value');}
+  });
+}
+
+/* -------- Main render -------- */
+function render(){
+  const state0 = getStateFromUI();
+  applyLocksToTargets(state0);
+  const state = getStateFromUI();
+  const final = computeFinalProfile(state);
+  syncProductionWorkflowState(state);
+  const t = state.target;
+  const caps = state.caps;
+  syncQuickTargetsFromMain();
+
+  // outputs for sliders
+  if(DOM.out.ams) DOM.out.ams.textContent = state.additions.ams_ml_per_l.toFixed(2);
+  if(DOM.out.phos) DOM.out.phos.textContent = state.additions.phos75_ml_per_l.toFixed(2);
+  if(DOM.out.cacl2) DOM.out.cacl2.textContent = state.additions.cacl2_g_per_l.toFixed(3);
+  if(DOM.out.gypsum) DOM.out.gypsum.textContent = state.additions.gypsum_g_per_l.toFixed(3);
+  if(DOM.out.epsom) DOM.out.epsom.textContent = state.additions.epsom_g_per_l.toFixed(3);
+  if(DOM.out.nacl) DOM.out.nacl.textContent = state.additions.nacl_g_per_l.toFixed(3);
+
+  setWarnClass(DOM.ui.sgAMS, state.additions.ams_ml_per_l, 0.80, SAFE.max.ams);
+  setWarnClass(DOM.ui.sgPHOS, state.additions.phos75_ml_per_l, 0.20, SAFE.max.phos);
+  setWarnClass(DOM.ui.sgNaCl, state.additions.nacl_g_per_l, 0.05, SAFE.max.nacl);
+  setWarnClass(DOM.ui.sgEps, state.additions.epsom_g_per_l, 0.12, SAFE.max.epsom);
+
+  // HUD quick read
+  DOM.out.hud_so4.textContent = fmt(final.so4,0);
+  DOM.out.hud_so4_t.textContent = fmt(t.so4_ppm,0);
+  paintHudDiff(DOM.out.hud_so4_d, final.so4 - t.so4_ppm, TOL.hard.so4, TOL.soft.so4);
+
+  DOM.out.hud_cl.textContent = fmt(final.cl,0);
+  DOM.out.hud_cl_t.textContent = fmt(t.cl_ppm,0);
+  paintHudDiff(DOM.out.hud_cl_d, final.cl - t.cl_ppm, TOL.hard.cl, TOL.soft.cl);
+
+  DOM.out.hud_alk.textContent = fmt(final.alk,0);
+  DOM.out.hud_alk_t.textContent = fmt(t.alk_caco3_ppm,0);
+  paintHudDiff(DOM.out.hud_alk_d, final.alk - t.alk_caco3_ppm, TOL.hard.alk, TOL.soft.alk);
+  if(DOM.out.qr_so4) DOM.out.qr_so4.textContent = fmt(final.so4,0);
+  if(DOM.out.qr_cl) DOM.out.qr_cl.textContent = fmt(final.cl,0);
+  if(DOM.out.qr_alk) DOM.out.qr_alk.textContent = fmt(final.alk,0);
+  if(DOM.out.qr_mg) DOM.out.qr_mg.textContent = fmt(final.mg,0);
+  if(DOM.out.qr_na) DOM.out.qr_na.textContent = fmt(final.na,0);
+  if(DOM.out.qr_ca) DOM.out.qr_ca.textContent = fmt(final.ca,0);
+
+  DOM.out.hud_mg.textContent = fmt(final.mg,0);
+  DOM.out.hud_mg_t.textContent = fmt(t.mg_ppm,0);
+  paintHudDiff(DOM.out.hud_mg_d, final.mg - t.mg_ppm, TOL.hard.mg, TOL.soft.mg);
+
+  DOM.out.hud_na.textContent = fmt(final.na,0);
+  DOM.out.hud_na_t.textContent = fmt(t.na_ppm,0);
+  paintHudDiff(DOM.out.hud_na_d, final.na - t.na_ppm, TOL.hard.na, TOL.soft.na);
+
+  DOM.out.hud_ca.textContent = fmt(final.ca,0);
+  DOM.out.hud_ca_t.textContent = fmt(t.ca_ppm,0);
+  paintHudDiff(DOM.out.hud_ca_d, final.ca - t.ca_ppm, 15, 35);
+
+  // Ratio tile
+  const rSO4Cl = final.ratio;
+  const rClSO4 = final.ratioInv;
+  if(ratioMode === 'so4cl'){
+    DOM.out.hud_ratio_mode.textContent = 'SO₄/Cl';
+    DOM.out.hud_ratio_value.textContent = (rSO4Cl===null ? '—' : rSO4Cl.toFixed(2));
+    DOM.out.hud_ratio_other.textContent = `Cl/SO₄ ${(rClSO4===null ? '—' : rClSO4.toFixed(2))}`;
+    DOM.out.hud_ratio_tag.textContent = tagSO4Cl(rSO4Cl);
+  }else{
+    DOM.out.hud_ratio_mode.textContent = 'Cl/SO₄';
+    DOM.out.hud_ratio_value.textContent = (rClSO4===null ? '—' : rClSO4.toFixed(2));
+    DOM.out.hud_ratio_other.textContent = `SO₄/Cl ${(rSO4Cl===null ? '—' : rSO4Cl.toFixed(2))}`;
+    DOM.out.hud_ratio_tag.textContent = tagClSO4(rClSO4);
+  }
+
+  const over = capOverages(final, caps);
+  const overParts = [];
+  if(over.na > 1e-6) overParts.push(`Na +${fmt(over.na,1)}`);
+  if(over.mg > 1e-6) overParts.push(`Mg +${fmt(over.mg,1)}`);
+  if(over.ca > 1e-6) overParts.push(`Ca +${fmt(over.ca,1)}`);
+  DOM.out.hud_caps.textContent = overParts.length
+    ? `⚠ ${overParts.join(' · ')}`
+    : `Na≤${caps.na_max_ppm} · Mg≤${caps.mg_max_ppm} · Ca≤${caps.ca_max_ppm}`;
+
+  // mobile sticky values
+  if(DOM.mobile.m_so4) DOM.mobile.m_so4.textContent = fmt(final.so4,0);
+  if(DOM.mobile.m_cl) DOM.mobile.m_cl.textContent = fmt(final.cl,0);
+  if(DOM.mobile.m_alk) DOM.mobile.m_alk.textContent = fmt(final.alk,0);
+
+  updateManualImpactPanel(final, state);
+  updateStatusBadge(final, t, state);
+
+  renderDosagesOnly();
+  updateProductionFlowUI(state);
+  saveState(state);
+  scheduleHistoryCommit(260);
+}
+
+function saveState(state){
+  try{
+    const slim = {
+      base: state.base, target: state.target, locks: state.locks,
+      additions: state.additions, volumes: state.volumes,
+      caps: state.caps
+    };
+    localStorage.setItem('waterStateV3_final', JSON.stringify(slim));
+    localStorage.setItem('cacl2WeighForm', DOM.dosage.cacl2WeighForm.value);
+    localStorage.setItem('ratioMode', ratioMode);
+  }catch(e){}
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem('waterStateV3_final');
+    const wf = localStorage.getItem('cacl2WeighForm');
+    const rm = localStorage.getItem('ratioMode');
+    return { raw: raw ? JSON.parse(raw) : null, wf: wf || null, rm: rm || null };
+  }catch(e){ return { raw:null, wf:null, rm:null }; }
+}
+
+/* ==========================================================
+   SOLVER — inchangé
+   ========================================================== */
+function autofitSafe(){
+  const s0 = getStateFromUI();
+  applyLocksToTargets(s0);
+  const s = getStateFromUI();
+  const baseD = computeDilutedBase(s.base);
+  const beforeProfile = {
+    so4: baseD.so4,
+    cl: baseD.cl,
+    alk: baseD.alk,
+    mg: baseD.mg,
+    na: baseD.na,
+    ca: baseD.ca
+  };
+  const caps = s.caps || { na_max_ppm:30, mg_max_ppm:10, ca_max_ppm:150 };
+  const t0 = {...s.target};
+
+  function computeWith(p){
+    const so4 = baseD.so4 + (p.ams*CHEM.AMS.so4) + (p.gypsum*CHEM.GYPSUM_2H2O.so4) + (p.epsom*CHEM.EPSOM_7H2O.so4);
+    const cl  = baseD.cl  + (p.ams*CHEM.AMS.cl)  + (p.cacl2*CHEM.CACL2_ANHYDROUS.cl) + (p.nacl*CHEM.NACL.cl);
+    const mg  = baseD.mg  + (p.epsom*CHEM.EPSOM_7H2O.mg);
+    const na  = baseD.na  + (p.nacl*CHEM.NACL.na);
+    const ca  = baseD.ca  + (p.cacl2*CHEM.CACL2_ANHYDROUS.ca) + (p.gypsum*CHEM.GYPSUM_2H2O.ca);
+    const alk = baseD.alk + (p.ams*CHEM.AMS.alk) + (p.phos*CHEM.PHOS75.alk);
+    return {so4,cl,mg,na,ca,alk};
+  }
+
+  function computeFixedMgNa(){
+    let epsom = 0;
+    if(!s.locks.mg && baseD.mg < t0.mg_ppm){
+      epsom = clamp((t0.mg_ppm - baseD.mg)/CHEM.EPSOM_7H2O.mg, 0, SAFE.max.epsom);
+    }
+    {
+      const mgIf = baseD.mg + epsom*CHEM.EPSOM_7H2O.mg;
+      if(mgIf > caps.mg_max_ppm){
+        epsom = clamp((caps.mg_max_ppm - baseD.mg)/CHEM.EPSOM_7H2O.mg, 0, SAFE.max.epsom);
+      }
+    }
+
+    let nacl = 0;
+    if(!s.locks.na && baseD.na < t0.na_ppm){
+      nacl = clamp((t0.na_ppm - baseD.na)/CHEM.NACL.na, 0, SAFE.max.nacl);
+    }
+    {
+      const naIf = baseD.na + nacl*CHEM.NACL.na;
+      if(naIf > caps.na_max_ppm){
+        nacl = clamp((caps.na_max_ppm - baseD.na)/CHEM.NACL.na, 0, SAFE.max.nacl);
+      }
+    }
+    return {epsom, nacl};
+  }
+
+  const fixed = computeFixedMgNa();
+
+  function trySolve(targetUse, label){
+    function score(p,r){
+      if(r.na > caps.na_max_ppm) return 1e9 + (r.na - caps.na_max_ppm)*1e6;
+      if(r.mg > caps.mg_max_ppm) return 1e9 + (r.mg - caps.mg_max_ppm)*1e6;
+      if(r.ca > caps.ca_max_ppm) return 1e9 + (r.ca - caps.ca_max_ppm)*1e6;
+
+      const eSO4 = Math.abs(r.so4 - targetUse.so4_ppm);
+      const eCl  = Math.abs(r.cl  - targetUse.cl_ppm);
+      const eAlk = Math.abs(r.alk - targetUse.alk_caco3_ppm);
+
+      if(eSO4 > TOL.soft.so4) return 5e7 + eSO4*1e5;
+      if(eCl  > TOL.soft.cl)  return 5e7 + eCl*1e5;
+      if(eAlk > TOL.soft.alk) return 5e7 + eAlk*1e5;
+
+      const eMg  = s.locks.mg ? 0 : Math.abs(r.mg - targetUse.mg_ppm);
+      const eNa  = s.locks.na ? 0 : Math.abs(r.na - targetUse.na_ppm);
+
+      const caRise = Math.max(0, r.ca - baseD.ca);
+      const caToTarget = Math.abs(r.ca - targetUse.ca_ppm);
+
+      let sc = 1.6*eSO4 + 1.6*eCl + 1.2*eAlk + 0.6*eMg + 0.6*eNa;
+
+      sc += caRise * 0.75;
+      if(!s.locks.ca) sc += caToTarget * 0.12;
+
+      sc += (p.nacl/SAFE.max.nacl)*18;
+      sc += (p.epsom/SAFE.max.epsom)*10;
+      sc += (p.phos/SAFE.max.phos)*10;
+
+      const amsBase = (p.ams/SAFE.max.ams)*4;
+      const amsOver = Math.max(0, p.ams - 0.70);
+      sc += amsBase + (amsOver/0.30)*6;
+
+      sc += p.cacl2*6 + p.gypsum*4;
+      return sc;
+    }
+
+    let best = null;
+
+    for(let ams=0; ams<=SAFE.max.ams + 1e-9; ams+=0.01){
+      const so4_now = baseD.so4 + fixed.epsom*CHEM.EPSOM_7H2O.so4 + ams*CHEM.AMS.so4;
+      const cl_now  = baseD.cl  + fixed.nacl*CHEM.NACL.cl + ams*CHEM.AMS.cl;
+      const alk_now = baseD.alk + ams*CHEM.AMS.alk;
+
+      let gypsum = 0;
+      if(so4_now < targetUse.so4_ppm){
+        gypsum = clamp((targetUse.so4_ppm - so4_now)/CHEM.GYPSUM_2H2O.so4, 0, SAFE.max.gypsum);
+      }
+
+      let cacl2 = 0;
+      if(cl_now < targetUse.cl_ppm){
+        cacl2 = clamp((targetUse.cl_ppm - cl_now)/CHEM.CACL2_ANHYDROUS.cl, 0, SAFE.max.cacl2);
+      }
+
+      let phos = 0;
+      if(alk_now > targetUse.alk_caco3_ppm){
+        phos = clamp((alk_now - targetUse.alk_caco3_ppm)/(-CHEM.PHOS75.alk), 0, SAFE.max.phos);
+      }
+
+      const p = { ams, phos, cacl2, gypsum, epsom: fixed.epsom, nacl: fixed.nacl };
+      const r = computeWith(p);
+      const sc = score(p,r);
+
+      if(!best || sc < best.sc) best = { p, r, sc, label };
+      if(best && best.sc < 12) break;
+    }
+    return best;
+  }
+
+  let bestA = trySolve(t0, 'A');
+  const invalidA = (!bestA || bestA.sc >= 5e7 || bestA.sc >= 1e9);
+
+  if(invalidA){
+    const naclMaxByNa = (caps.na_max_ppm > baseD.na) ? (caps.na_max_ppm - baseD.na)/CHEM.NACL.na : 0;
+    const naclMax = clamp(Math.min(SAFE.max.nacl, naclMaxByNa), 0, SAFE.max.nacl);
+
+    const caBudget = caps.ca_max_ppm - baseD.ca;
+    const cacl2MaxByCa = (caBudget > 0) ? (caBudget / CHEM.CACL2_ANHYDROUS.ca) : 0;
+    const cacl2Max = clamp(Math.min(SAFE.max.cacl2, cacl2MaxByCa), 0, SAFE.max.cacl2);
+
+    const clFeasibleMax =
+      baseD.cl +
+      (SAFE.max.ams * CHEM.AMS.cl) +
+      (naclMax * CHEM.NACL.cl) +
+      (cacl2Max * CHEM.CACL2_ANHYDROUS.cl);
+
+    const clStar = Math.min(t0.cl_ppm, Math.max(baseD.cl, clFeasibleMax));
+    const r0 = (t0.cl_ppm > 1e-6) ? (t0.so4_ppm / t0.cl_ppm) : 1.0;
+    const so4Star = clamp(r0 * clStar, 0, 400);
+
+    const tB = { ...t0, cl_ppm: clStar, so4_ppm: so4Star };
+    const bestB = trySolve(tB, 'B');
+    const invalidB = (!bestB || bestB.sc >= 5e7 || bestB.sc >= 1e9);
+
+    if(invalidB){
+      WORKFLOW.autofitDone = false;
+      WORKFLOW.dosagesOpened = false;
+      WORKFLOW.paramsReviewed = false;
+      WORKFLOW.additionsFromAutofit = false;
+      WORKFLOW.compare = null;
+      updateProductionFlowUI();
+      showNotification(
+        'Autofit (caps)',
+        `Impossible d'atteindre les cibles (ou leurs ajustements) sans dépasser les caps.\n` +
+        `Caps: Na≤${caps.na_max_ppm} Mg≤${caps.mg_max_ppm} Ca≤${caps.ca_max_ppm}\n\n` +
+        `Pistes: augmenter un cap (souvent Ca), réduire Cl/SO₄ cible, ou accepter une tolérance > ±10 ppm.`,
+        'warning'
+      );
+      return;
+    }
+
+    DOM.add.ams.value = bestB.p.ams.toFixed(2);
+    DOM.add.phos.value = bestB.p.phos.toFixed(2);
+    DOM.add.cacl2.value = bestB.p.cacl2.toFixed(3);
+    DOM.add.gypsum.value = bestB.p.gypsum.toFixed(3);
+    DOM.add.epsom.value = bestB.p.epsom.toFixed(3);
+    DOM.add.nacl.value = bestB.p.nacl.toFixed(3);
+
+    WORKFLOW.lastAutofitSignature = signatureForAutofit(getStateFromUI());
+    WORKFLOW.autofitDone = true;
+    WORKFLOW.dosagesOpened = false;
+    WORKFLOW.paramsReviewed = false;
+    WORKFLOW.additionsFromAutofit = true;
+    WORKFLOW.compare = {
+      label: 'Plan B (ratio ajusté)',
+      before: beforeProfile,
+      after: bestB.r
+    };
+
+    render();
+
+    const ratio = bestB.r.cl>1e-6 ? (bestB.r.so4/bestB.r.cl) : null;
+    const ratioInv = bestB.r.so4>1e-6 ? (bestB.r.cl/bestB.r.so4) : null;
+
+    showNotification(
+      'Autofit (Plan B : ratio ajusté)',
+      `Cible initiale non faisable sous caps (souvent Ca cap limite CaCl₂).\n` +
+      `→ Proposition: Cl ${tB.cl_ppm.toFixed(0)} & SO₄ ${tB.so4_ppm.toFixed(0)} (ratio conservé ~${r0.toFixed(2)})\n\n` +
+      `Caps: Na≤${caps.na_max_ppm} Mg≤${caps.mg_max_ppm} Ca≤${caps.ca_max_ppm}\n\n` +
+      `AMS ${bestB.p.ams.toFixed(2)} | Phos ${bestB.p.phos.toFixed(2)} | CaCl₂ ${bestB.p.cacl2.toFixed(3)} | Gypse ${bestB.p.gypsum.toFixed(3)}\n` +
+      `Epsom ${bestB.p.epsom.toFixed(3)} | NaCl ${bestB.p.nacl.toFixed(3)}\n\n` +
+      `Résultat: SO₄ ${bestB.r.so4.toFixed(1)} | Cl ${bestB.r.cl.toFixed(1)} | SO₄/Cl ${(ratio===null?'—':ratio.toFixed(2))} (Cl/SO₄ ${(ratioInv===null?'—':ratioInv.toFixed(2))})\n` +
+      `Alk ${bestB.r.alk.toFixed(1)} | Mg ${bestB.r.mg.toFixed(1)} | Na ${bestB.r.na.toFixed(1)} | Ca ${bestB.r.ca.toFixed(1)}`,
+      'success'
+    );
+    return;
+  }
+
+  DOM.add.ams.value = bestA.p.ams.toFixed(2);
+  DOM.add.phos.value = bestA.p.phos.toFixed(2);
+  DOM.add.cacl2.value = bestA.p.cacl2.toFixed(3);
+  DOM.add.gypsum.value = bestA.p.gypsum.toFixed(3);
+  DOM.add.epsom.value = bestA.p.epsom.toFixed(3);
+  DOM.add.nacl.value = bestA.p.nacl.toFixed(3);
+
+  WORKFLOW.lastAutofitSignature = signatureForAutofit(getStateFromUI());
+  WORKFLOW.autofitDone = true;
+  WORKFLOW.dosagesOpened = false;
+  WORKFLOW.paramsReviewed = false;
+  WORKFLOW.additionsFromAutofit = true;
+  WORKFLOW.compare = {
+    label: 'caps + goût',
+    before: beforeProfile,
+    after: bestA.r
+  };
+
+  render();
+
+  const ratio = bestA.r.cl>1e-6 ? (bestA.r.so4/bestA.r.cl) : null;
+  const ratioInv = bestA.r.so4>1e-6 ? (bestA.r.cl/bestA.r.so4) : null;
+
+  showNotification(
+    'Autofit (caps + goût)',
+    `Score ${bestA.sc.toFixed(1)} (plus bas = mieux)\n` +
+    `Caps: Na≤${caps.na_max_ppm} Mg≤${caps.mg_max_ppm} Ca≤${caps.ca_max_ppm}\n\n` +
+    `AMS ${bestA.p.ams.toFixed(2)} mL/L | Phos ${bestA.p.phos.toFixed(2)} mL/L\n` +
+    `CaCl₂ ${bestA.p.cacl2.toFixed(3)} g/L (anhydre moteur) | Gypse ${bestA.p.gypsum.toFixed(3)} g/L\n` +
+    `Epsom ${bestA.p.epsom.toFixed(3)} g/L | NaCl ${bestA.p.nacl.toFixed(3)} g/L\n\n` +
+    `Résultat:\n` +
+    `SO₄ ${bestA.r.so4.toFixed(1)} | Cl ${bestA.r.cl.toFixed(1)} | SO₄/Cl ${(ratio===null?'—':ratio.toFixed(2))} (Cl/SO₄ ${(ratioInv===null?'—':ratioInv.toFixed(2))})\n` +
+    `Alk ${bestA.r.alk.toFixed(1)} | Mg ${bestA.r.mg.toFixed(1)} | Na ${bestA.r.na.toFixed(1)} | Ca ${bestA.r.ca.toFixed(1)}`,
+    'success'
+  );
+
+  // Prod guidance: offer open balance
+  if(window.matchMedia && window.matchMedia("(max-width: 767px)").matches){
+    showNotification('Next', '👉 Ouvre “Dosages” (ou “Balance”) pour peser.', 'success');
+  }
+}
+
+/* ==========================================================
+   Presets — base vide (nouveaux users)
+   ========================================================== */
+let customPresets = [];
+let editingPresetIdx = null;
+
+function normalizePreset(raw, fallbackName='Preset'){
+  return {
+    name: String(raw?.name ?? fallbackName).trim() || fallbackName,
+    so4: clampNonNeg(safeNum(raw?.so4,0)),
+    cl: clampNonNeg(safeNum(raw?.cl,0)),
+    alk: clampNonNeg(safeNum(raw?.alk,0)),
+    mg: clampNonNeg(safeNum(raw?.mg,0)),
+    na: clampNonNeg(safeNum(raw?.na,0)),
+    ca: clampNonNeg(safeNum(raw?.ca,0))
+  };
+}
+function loadPresets(){
+  try{
+    const stored = localStorage.getItem('waterPresetsV3_final');
+    if(stored){
+      const parsed = JSON.parse(stored);
+      if(Array.isArray(parsed)) customPresets = parsed.map((p, idx)=>normalizePreset(p, `Preset ${idx+1}`));
+      else customPresets = [];
+    }else{
+      // base vide
+      customPresets = [];
+      localStorage.setItem('waterPresetsV3_final', JSON.stringify(customPresets));
+    }
+  }catch(e){
+    customPresets = [];
+  }
+}
+function savePresets(){
+  try{ localStorage.setItem('waterPresetsV3_final', JSON.stringify(customPresets)); }catch(e){}
+}
+function setActivePreset(name){
+  if(!DOM.ui.activePresetBadge || !DOM.ui.activePresetName) return;
+  if(!name){
+    DOM.ui.activePresetBadge.classList.add('is-hidden');
+    DOM.ui.activePresetName.textContent='';
+    if(!HISTORY.applying && !_lockInternal) scheduleHistoryCommit(0);
+    return;
+  }
+  DOM.ui.activePresetBadge.classList.remove('is-hidden');
+  DOM.ui.activePresetName.textContent=name;
+  if(!HISTORY.applying && !_lockInternal) scheduleHistoryCommit(0);
+}
+function applyPresetToTargets(p){
+  // charger preset = cibles secondaires déverrouillées pour coller au preset (comme avant)
+  DOM.locks.mg.checked=false;
+  DOM.locks.na.checked=false;
+  DOM.locks.ca.checked=true;
+  DOM.target.so4.value=p.so4;
+  DOM.target.cl.value=p.cl;
+  DOM.target.alk.value=p.alk;
+  DOM.target.mg.value=p.mg;
+  DOM.target.na.value=p.na;
+  DOM.target.ca.value=p.ca;
+}
+function getPresetEditorFields(){
+  return {
+    so4: document.getElementById('preset_so4_ppm'),
+    cl: document.getElementById('preset_cl_ppm'),
+    alk: document.getElementById('preset_alk_ppm'),
+    mg: document.getElementById('preset_mg_ppm'),
+    na: document.getElementById('preset_na_ppm'),
+    ca: document.getElementById('preset_ca_ppm')
+  };
+}
+function setPresetEditorValues(p){
+  const f = getPresetEditorFields();
+  if(f.so4) f.so4.value = clampNonNeg(safeNum(p?.so4, 0));
+  if(f.cl)  f.cl.value  = clampNonNeg(safeNum(p?.cl, 0));
+  if(f.alk) f.alk.value = clampNonNeg(safeNum(p?.alk, 0));
+  if(f.mg)  f.mg.value  = clampNonNeg(safeNum(p?.mg, 0));
+  if(f.na)  f.na.value  = clampNonNeg(safeNum(p?.na, 0));
+  if(f.ca)  f.ca.value  = clampNonNeg(safeNum(p?.ca, 0));
+}
+function fillPresetEditorFromTargets(){
+  setPresetEditorValues({
+    so4: safeNum(DOM.target.so4?.value, 0),
+    cl: safeNum(DOM.target.cl?.value, 0),
+    alk: safeNum(DOM.target.alk?.value, 0),
+    mg: safeNum(DOM.target.mg?.value, 0),
+    na: safeNum(DOM.target.na?.value, 0),
+    ca: safeNum(DOM.target.ca?.value, 0)
+  });
+}
+function readPresetFromEditor(name){
+  const f = getPresetEditorFields();
+  return {
+    name: String(name || '').trim(),
+    so4: clampNonNeg(safeNum(f.so4?.value, 0)),
+    cl: clampNonNeg(safeNum(f.cl?.value, 0)),
+    alk: clampNonNeg(safeNum(f.alk?.value, 0)),
+    mg: clampNonNeg(safeNum(f.mg?.value, 0)),
+    na: clampNonNeg(safeNum(f.na?.value, 0)),
+    ca: clampNonNeg(safeNum(f.ca?.value, 0))
+  };
+}
+function updatePresetEditorUI(){
+  const saveBtn = document.getElementById('savePreset');
+  const nameInput = document.getElementById('presetName');
+  const state = document.getElementById('presetEditorState');
+  const stateName = document.getElementById('presetEditorName');
+  if(!saveBtn || !nameInput || !state || !stateName) return;
+
+  const isEditing = Number.isInteger(editingPresetIdx) && !!customPresets[editingPresetIdx];
+  if(isEditing){
+    const p = customPresets[editingPresetIdx];
+    state.hidden = false;
+    stateName.textContent = p.name;
+    saveBtn.textContent = '✅ Mettre à jour';
+    saveBtn.classList.remove('btn-primary');
+    saveBtn.classList.add('btn-warm');
+    nameInput.placeholder = `Modifier "${p.name}"`;
+  }else{
+    state.hidden = true;
+    stateName.textContent = '—';
+    saveBtn.textContent = '💾 Créer preset';
+    saveBtn.classList.remove('btn-warm');
+    saveBtn.classList.add('btn-primary');
+    nameInput.placeholder = 'Nom du preset...';
+  }
+}
+function renderPresets(){
+  const container = document.getElementById('customPresets');
+  container.textContent = '';
+  customPresets.forEach((p, idx)=>{
+    const safeName = String(p.name ?? `Preset ${idx+1}`);
+    const div = document.createElement('div');
+    div.className = 'pill preset-pill';
+    if(editingPresetIdx === idx) div.classList.add('is-editing');
+    div.dataset.idx = String(idx);
+    div.tabIndex = 0;
+    div.setAttribute('aria-label', `Charger le preset ${safeName}`);
+
+    const main = document.createElement('div');
+    main.className = 'preset-pill-main';
+
+    const name = document.createElement('span');
+    name.textContent = safeName;
+
+    const mini = document.createElement('span');
+    mini.className = 'preset-pill-meta';
+    mini.textContent = `SO₄ ${p.so4} · Cl ${p.cl} · Alk ${p.alk}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'preset-pill-actions';
+
+    const loadBtn = document.createElement('button');
+    loadBtn.type = 'button';
+    loadBtn.className = 'btn preset-pill-action preset-load';
+    loadBtn.textContent = 'Charger';
+    loadBtn.dataset.idx = String(idx);
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'btn preset-pill-action preset-edit';
+    editBtn.textContent = 'Éditer';
+    editBtn.dataset.idx = String(idx);
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn preset-pill-action preset-delete danger';
+    delBtn.textContent = 'Suppr';
+    delBtn.dataset.idx = String(idx);
+
+    main.appendChild(name);
+    main.appendChild(mini);
+    actions.appendChild(loadBtn);
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+
+    div.appendChild(main);
+    div.appendChild(actions);
+
+    container.appendChild(div);
+  });
+
+  updatePresetEditorUI();
+  refreshQuickPresetSelect();
+  if(!HISTORY.applying && !_lockInternal) scheduleHistoryCommit(0);
+}
+function refreshQuickPresetSelect(){
+  const sel = DOM.quickPreset.select;
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '';
+  const o0 = document.createElement('option');
+  o0.value = '';
+  o0.textContent = '— Aucun preset —';
+  sel.appendChild(o0);
+
+  customPresets.forEach((p, idx)=>{
+    const opt = document.createElement('option');
+    opt.value = String(idx);
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+
+  // restore if possible
+  if(current !== '' && Number.isInteger(parseInt(current,10)) && customPresets[parseInt(current,10)]){
+    sel.value = current;
+  }else{
+    sel.value = '';
+  }
+}
+
+/* Copy — inchangé */
+async function copyDosage(){
+  if(!isDosageReady()){
+    showNotification('Dosages', 'Lance Autofit ou fais un ajustement manuel (sliders) avant de copier.', 'warning');
+    return;
+  }
+  const state0 = getStateFromUI();
+  applyLocksToTargets(state0);
+  const s = getStateFromUI();
+  const final = computeFinalProfile(s);
+  const ratio = final.ratio===null ? '—' : final.ratio.toFixed(2);
+  const ratioInv = final.ratioInv===null ? '—' : final.ratioInv.toFixed(2);
+  const weighForm = DOM.dosage.cacl2WeighForm.value;
+
+  const txt =
+`Profil final:
+SO₄ ${final.so4.toFixed(1)} ppm | Cl ${final.cl.toFixed(1)} ppm | SO₄/Cl ${ratio} | Cl/SO₄ ${ratioInv}
+Alk ${final.alk.toFixed(1)} ppm | Mg ${final.mg.toFixed(1)} ppm | Na ${final.na.toFixed(1)} ppm | Ca ${final.ca.toFixed(1)} ppm
+Caps: Na≤${s.caps.na_max_ppm} Mg≤${s.caps.mg_max_ppm} Ca≤${s.caps.ca_max_ppm}
+CaCl₂ moteur: anhydre
+CaCl₂ pesée (affichage): ${weighForm}
+
+Réglages (par L):
+AMS ${s.additions.ams_ml_per_l.toFixed(2)} mL/L
+Phos 75% ${s.additions.phos75_ml_per_l.toFixed(2)} mL/L
+CaCl₂ ${s.additions.cacl2_g_per_l.toFixed(3)} g/L (calc anhydre)
+Gypse ${s.additions.gypsum_g_per_l.toFixed(3)} g/L
+Epsom ${s.additions.epsom_g_per_l.toFixed(3)} g/L
+NaCl ${s.additions.nacl_g_per_l.toFixed(3)} g/L
+
+Volumes:
+Empâtage ${s.volumes.mash_l} L | Rinçage ${s.volumes.sparge_l} L
+
+Empâtage:
+AMS ${DOM.out.mash_ams_ml.textContent} mL (${DOM.out.mash_ams_g.textContent} g)
+Phos ${DOM.out.mash_phos_ml.textContent} mL (${DOM.out.mash_phos_g.textContent} g)
+CaCl₂ ${DOM.out.mash_cacl2_g.textContent} g (autre forme: ${DOM.out.mash_cacl2_alt_g.textContent} g)
+Gypse ${DOM.out.mash_gypsum_g.textContent} g
+Epsom ${DOM.out.mash_epsom_g.textContent} g
+NaCl ${DOM.out.mash_nacl_g.textContent} g
+
+Rinçage:
+AMS ${DOM.out.sparge_ams_ml.textContent} mL (${DOM.out.sparge_ams_g.textContent} g)
+Phos ${DOM.out.sparge_phos_ml.textContent} mL (${DOM.out.sparge_phos_g.textContent} g)
+CaCl₂ ${DOM.out.sparge_cacl2_g.textContent} g (autre forme: ${DOM.out.sparge_cacl2_alt_g.textContent} g)
+Gypse ${DOM.out.sparge_gypsum_g.textContent} g
+Epsom ${DOM.out.sparge_epsom_g.textContent} g
+NaCl ${DOM.out.sparge_nacl_g.textContent} g`;
+
+  try{
+    await navigator.clipboard.writeText(txt);
+    showNotification('Copié', 'Profil + réglages + dosages copiés.', 'success');
+  }catch(e){
+    alert('Impossible de copier automatiquement (permissions navigateur).');
+  }
+}
+
+/* ==========================================================
+   DRAWERS helpers
+   ========================================================== */
+function openDrawer(which){
+  if(which === 'dos' && !isDosageReady()){
+    if(hasStaleAutofitAdditions()){
+      showNotification('Dosages', 'Autofit obsolète après modification: relance Autofit (ou ajuste les sliders) pour régénérer les dosages.', 'warning');
+    }else{
+      showNotification('Dosages', 'Lance Autofit ou fais un ajustement manuel (sliders) pour générer les dosages.', 'warning');
+    }
+    return;
+  }
+  const el = (which === 'adv') ? DOM.drawers.adv : DOM.drawers.dos;
+  if(!el) return;
+  if(which === 'adv') collapseAdvancedAccordions();
+  if(which === 'dos') WORKFLOW.paramsReviewed = true;
+  if(which === 'dos' && WORKFLOW.autofitDone) WORKFLOW.dosagesOpened = true;
+  el.style.display = 'block';
+  el.addEventListener('click', onOverlayClickOnce);
+  document.body.style.overflow = 'hidden';
+  updateProductionFlowUI();
+  function onOverlayClickOnce(e){
+    if(e.target === el){
+      closeDrawer(which);
+    }
+  }
+}
+function closeDrawer(which){
+  const el = (which === 'adv') ? DOM.drawers.adv : DOM.drawers.dos;
+  if(!el) return;
+  el.style.display = 'none';
+  document.body.style.overflow = '';
+  updateProductionFlowUI();
+}
+function openCapsBlock(){
+  openDrawer('adv');
+  openAdvancedAccordion('advAccCaps');
+  // scroll to caps after paint
+  setTimeout(()=>{
+    const anchor = document.getElementById('capsAnchor');
+    if(anchor){
+      anchor.scrollIntoView({behavior:'smooth', block:'start'});
+      showNotification('Caps', '🧯 Ajuste ici les caps Na/Mg/Ca.', 'success');
+    }
+  }, 120);
+}
+function openDosageFromAdvanced(){
+  closeDrawer('adv');
+  openDrawer('dos');
+}
+
+/* ==========================================================
+   EVENTS (with debounce for fluidity)
+   ========================================================== */
+DOM.ratio.box.addEventListener('click', toggleRatioMode);
+DOM.ratio.box.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleRatioMode(); }
+});
+if(DOM.quickRead.compact){
+  const toggleQuickReadCards = ()=>{
+    if(!(window.matchMedia && window.matchMedia("(max-width: 767px)").matches)) return;
+    const next = !(DOM.quickRead.card?.classList.contains('mobile-expanded'));
+    setQuickReadExpanded(next);
+  };
+  DOM.quickRead.compact.addEventListener('click', toggleQuickReadCards);
+  DOM.quickRead.compact.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      toggleQuickReadCards();
+    }
+  });
+}
+if(DOM.quickRead.toggle){
+  DOM.quickRead.toggle.addEventListener('click', ()=>{
+    const shouldShow = !!DOM.quickRead.row?.hidden;
+    setQuickMineralsVisible(shouldShow);
+  });
+}
+document.body.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-history]');
+  if(!btn) return;
+  const action = btn.getAttribute('data-history');
+  if(action === 'undo'){
+    e.preventDefault();
+    undoHistory();
+    return;
+  }
+  if(action === 'redo'){
+    e.preventDefault();
+    redoHistory();
+  }
+});
+function isTextEditingContext(){
+  const el = document.activeElement;
+  if(!el) return false;
+  const tag = String(el.tagName || '').toUpperCase();
+  if(tag === 'TEXTAREA') return true;
+  if(tag !== 'INPUT') return false;
+  const t = String(el.type || '').toLowerCase();
+  return ['text','search','email','url','tel','password'].includes(t);
+}
+document.addEventListener('keydown', (e)=>{
+  const withCommand = !!(e.ctrlKey || e.metaKey);
+  if(!withCommand || e.altKey) return;
+  if(isTextEditingContext()) return;
+  const key = String(e.key || '').toLowerCase();
+  if(key === 'z'){
+    e.preventDefault();
+    if(e.shiftKey) redoHistory();
+    else undoHistory();
+    return;
+  }
+  if(key === 'y' && !e.shiftKey){
+    e.preventDefault();
+    redoHistory();
+  }
+});
+
+// Balance
+if(DOM.weigh.btn) DOM.weigh.btn.addEventListener('click', enterWeighMode);
+if(DOM.weigh.exit) DOM.weigh.exit.addEventListener('click', exitWeighMode);
+const weighModeBtn2 = document.getElementById('weighModeBtn2');
+if(weighModeBtn2){
+  weighModeBtn2.addEventListener('click', ()=>{
+    closeDrawer('dos');
+    enterWeighMode();
+  });
+}
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    if(document.body.classList.contains('weigh-mode')) exitWeighMode();
+    if(DOM.drawers.adv.style.display === 'block') closeDrawer('adv');
+    if(DOM.drawers.dos.style.display === 'block') closeDrawer('dos');
+  }
+});
+
+// Drawers open/close
+const openAdvancedBtn = document.getElementById('openAdvancedBtn');
+if(openAdvancedBtn) openAdvancedBtn.addEventListener('click', ()=>openDrawer('adv'));
+if(DOM.drawers.advClose) DOM.drawers.advClose.addEventListener('click', ()=>closeDrawer('adv'));
+const openDosageBtn2 = document.getElementById('openDosageBtn2');
+if(openDosageBtn2) openDosageBtn2.addEventListener('click', ()=>openDrawer('dos'));
+const openDosageBtnAdv = document.getElementById('openDosageBtnAdv');
+if(openDosageBtnAdv) openDosageBtnAdv.addEventListener('click', openDosageFromAdvanced);
+if(DOM.drawers.dosClose) DOM.drawers.dosClose.addEventListener('click', ()=>closeDrawer('dos'));
+const openCapsBtn = document.getElementById('openCapsBtn');
+if(openCapsBtn) openCapsBtn.addEventListener('click', openCapsBlock);
+
+// Guided prod CTA
+if(DOM.prod.mainCta){
+  DOM.prod.mainCta.addEventListener('click', ()=>{
+    runPrimaryAction(DOM.prod.mainCta.dataset.action || 'autofit');
+  });
+}
+if(DOM.prod.secondaryCta){
+  DOM.prod.secondaryCta.addEventListener('click', ()=>openDrawer('adv'));
+}
+
+// Autofit
+document.getElementById('autofitBtnAdv').addEventListener('click', ()=>{
+  autofitSafe();
+  // keep drawer open but show guidance
+  if(window.matchMedia && window.matchMedia("(max-width: 767px)").matches){
+    showNotification('Prod', '👉 Maintenant: “Dosages” → pesée.', 'success');
+  }
+});
+
+// Reset
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  DOM.add.ams.value = 0;
+  DOM.add.phos.value = 0;
+  DOM.add.cacl2.value = 0;
+  DOM.add.gypsum.value = 0;
+  DOM.add.epsom.value = 0;
+  DOM.add.nacl.value = 0;
+  WORKFLOW.autofitDone = false;
+  WORKFLOW.dosagesOpened = false;
+  WORKFLOW.paramsReviewed = false;
+  WORKFLOW.additionsFromAutofit = false;
+  WORKFLOW.lastAutofitSignature = null;
+  WORKFLOW.compare = null;
+  setActivePreset(null);
+  render();
+  showNotification('Reset', 'Ajustements remis à zéro.', 'warning');
+});
+
+// Copy buttons
+document.getElementById('copyDosageBtn').addEventListener('click',copyDosage);
+document.getElementById('copyDosageBtn2').addEventListener('click',copyDosage);
+
+// Scenarios
+document.getElementById('scenarioA').addEventListener('click',()=>{
+  DOM.volumes.mash.value = 550;
+  DOM.volumes.sparge.value = 300;
+  render();
+});
+document.getElementById('scenarioB').addEventListener('click',()=>{
+  DOM.volumes.mash.value = 550;
+  DOM.volumes.sparge.value = 400;
+  render();
+});
+if(DOM.base.ro){
+  DOM.base.ro.addEventListener('input', ()=>{
+    if(RO_HINT.timerId){
+      clearTimeout(RO_HINT.timerId);
+      RO_HINT.timerId = null;
+    }
+    RO_HINT.timerId = setTimeout(()=>{
+      RO_HINT.timerId = null;
+      notifyRoMixBehavior();
+    }, 280);
+  });
+  DOM.base.ro.addEventListener('change', notifyRoMixBehavior);
+}
+
+// Toggle CaCl2 weigh form (pas de render)
+DOM.dosage.cacl2WeighForm.addEventListener('change',()=>{
+  renderDosagesOnly();
+  saveState(getStateFromUI());
+  showNotification('CaCl₂ – forme pesée', `Affichage mis à jour: ${DOM.dosage.cacl2WeighForm.value}`, 'success');
+});
+
+// Preset badge tap to clear label
+DOM.ui.activePresetBadge.addEventListener('click', ()=>setActivePreset(null));
+
+/* Presets in drawer */
+document.getElementById('customPresets').addEventListener('click',(e)=>{
+  const pill = e.target.closest('.preset-pill');
+  const loadBtn = e.target.closest('.preset-load');
+  const editBtn = e.target.closest('.preset-edit');
+  const delBtn = e.target.closest('.preset-delete');
+
+  if(!pill) return;
+  const source = loadBtn || editBtn || delBtn || pill;
+  const idx = parseInt(source?.dataset.idx || pill.dataset.idx, 10);
+  if(!Number.isInteger(idx) || !customPresets[idx]) return;
+
+  if(delBtn){
+    if(confirm(`Supprimer le preset "${customPresets[idx].name}" ?`)){
+      customPresets.splice(idx,1);
+      savePresets();
+      if(editingPresetIdx === idx) editingPresetIdx = null;
+      if(Number.isInteger(editingPresetIdx) && editingPresetIdx > idx) editingPresetIdx -= 1;
+      document.getElementById('presetName').value='';
+      setActivePreset(null);
+      renderPresets();
+    }
+    return;
+  }
+
+  if(editBtn){
+    if(editingPresetIdx === idx){
+      editingPresetIdx = null;
+      document.getElementById('presetName').value = '';
+      fillPresetEditorFromTargets();
+      renderPresets();
+      return;
+    }
+    const p=customPresets[idx];
+    document.getElementById('presetName').value=p.name;
+    setPresetEditorValues(p);
+    editingPresetIdx=idx;
+    renderPresets();
+    showNotification('Édition preset', `✏️ ${p.name} prêt à être modifié. Ajuste les valeurs ici puis clique “Mettre à jour”.`, 'success');
+    return;
+  }
+
+  const p=customPresets[idx];
+  applyPresetToTargets(p);
+  if(editingPresetIdx===null) setPresetEditorValues(p);
+  setActivePreset(p.name);
+  showNotification('Preset chargé', `🎯 ${p.name}`, 'success');
+  render();
+});
+
+const cancelPresetEditBtn = document.getElementById('cancelPresetEditBtn');
+if(cancelPresetEditBtn){
+  cancelPresetEditBtn.addEventListener('click', ()=>{
+    editingPresetIdx = null;
+    document.getElementById('presetName').value = '';
+    fillPresetEditorFromTargets();
+    renderPresets();
+  });
+}
+const presetUseCurrentBtn = document.getElementById('presetUseCurrentBtn');
+if(presetUseCurrentBtn){
+  presetUseCurrentBtn.addEventListener('click', ()=>{
+    fillPresetEditorFromTargets();
+    showNotification('Preset', 'Valeurs du preset alignées sur les cibles actuelles.', 'success');
+  });
+}
+
+document.getElementById('savePreset').addEventListener('click',()=>{
+  const name=document.getElementById('presetName').value.trim();
+  if(!name){ alert('Veuillez entrer un nom pour le preset'); return; }
+
+  const p = readPresetFromEditor(name);
+
+  const isUpdate = (editingPresetIdx!==null);
+  if(editingPresetIdx!==null){
+    customPresets[editingPresetIdx]=p;
+    editingPresetIdx=null;
+  }else{
+    customPresets.push(p);
+  }
+  savePresets();
+  renderPresets();
+  document.getElementById('presetName').value='';
+  setActivePreset(p.name);
+  if(isUpdate) setPresetEditorValues(p);
+  else fillPresetEditorFromTargets();
+  showNotification(isUpdate ? 'Preset mis à jour' : 'Preset créé', `${isUpdate ? '✅' : '💾'} ${p.name}`, 'success');
+});
+
+/* Quick preset select under dKH (simple mode) */
+DOM.quickPreset.select.addEventListener('change', ()=>{
+  const v = DOM.quickPreset.select.value;
+  if(v === '') return;
+  const idx = parseInt(v,10);
+  if(Number.isInteger(idx) && customPresets[idx]){
+    applyPresetToTargets(customPresets[idx]);
+    if(editingPresetIdx===null) setPresetEditorValues(customPresets[idx]);
+    setActivePreset(customPresets[idx].name);
+    showNotification('Preset chargé', `🎯 ${customPresets[idx].name}`, 'success');
+    render();
+  }
+});
+
+if(DOM.quickTargets.toggle){
+  DOM.quickTargets.toggle.addEventListener('click', ()=>{
+    const shouldShow = !!DOM.quickTargets.wrap?.hidden;
+    setQuickMgNaVisible(shouldShow);
+  });
+}
+if(DOM.quickTargets.mg){
+  DOM.quickTargets.mg.addEventListener('input', syncMainTargetsFromQuick);
+  DOM.quickTargets.mg.addEventListener('change', syncMainTargetsFromQuick);
+}
+if(DOM.quickTargets.na){
+  DOM.quickTargets.na.addEventListener('input', syncMainTargetsFromQuick);
+  DOM.quickTargets.na.addEventListener('change', syncMainTargetsFromQuick);
+}
+
+/* Mobile dock actions */
+if(DOM.mobile.dockPrimary){
+  DOM.mobile.dockPrimary.addEventListener('click', ()=>{
+    runPrimaryAction(DOM.mobile.dockPrimary.dataset.action || 'autofit');
+  });
+}
+const dockAdvanced = document.getElementById('dockAdvanced');
+if(dockAdvanced) dockAdvanced.addEventListener('click', ()=>openDrawer('adv'));
+
+/* Debounced render for input (mobile smooth) */
+let _renderTimer = null;
+let _renderRaf = null;
+function scheduleRender(){
+  if(_lockInternal) return;
+  if(_renderTimer) clearTimeout(_renderTimer);
+  _renderTimer = setTimeout(()=>{ _renderTimer=null; render(); }, 70);
+}
+function scheduleRenderRaf(){
+  if(_lockInternal) return;
+  if(_renderRaf !== null) return;
+  const raf = (typeof requestAnimationFrame === 'function')
+    ? requestAnimationFrame
+    : (cb)=>setTimeout(cb, 16);
+  _renderRaf = raf(()=>{
+    _renderRaf = null;
+    render();
+  });
+}
+
+['input','change'].forEach(evt=>{
+  document.body.addEventListener(evt,(e)=>{
+    if(_lockInternal) return;
+    if(!e.target) return;
+    const targetId = String(e.target.id || '');
+    if(
+      targetId === 'ams_ml_per_l' ||
+      targetId === 'phos75_ml_per_l' ||
+      targetId === 'cacl2_g_per_l' ||
+      targetId === 'gypsum_g_per_l' ||
+      targetId === 'epsom_g_per_l' ||
+      targetId === 'nacl_g_per_l'
+    ){
+      WORKFLOW.additionsFromAutofit = false;
+    }
+    const tag = e.target.tagName;
+    if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA'){
+      if(evt === 'input'){
+        if(e.target.matches && e.target.matches('input[type="range"]')) scheduleHistoryCommit(220);
+        else scheduleHistoryCommit(360);
+      }else{
+        scheduleHistoryCommit(0);
+      }
+    }
+    if(e.target.id === 'cacl2_weigh_form') return; // must not trigger render
+    if(e.target.id === 'presetName' || String(e.target.id || '').startsWith('preset_')) return;
+    if(tag === 'INPUT' || tag === 'SELECT'){
+      if(evt === 'input'){
+        if(e.target.matches && e.target.matches('input[type="range"]')) scheduleRenderRaf();
+        else scheduleRender();
+      }
+      else render();
+    }
+  });
+});
+
+/* Boot */
+(function init(){
+  loadRatioMode();
+  loadPresets();
+  renderPresets();
+  initTargetSteppers();
+  initAdvancedAccordion();
+  setQuickReadExpanded(false);
+  setQuickMineralsVisible(false);
+  setQuickMgNaVisible(false);
+
+  const saved = loadState();
+  if(saved.rm === 'clso4' || saved.rm === 'so4cl') ratioMode = saved.rm;
+
+  if(saved.raw){
+    const s = saved.raw;
+
+    if(DOM.base.salifert_dkh){
+      const savedAlkBase = (s.base?.alk_caco3_ppm ?? (9.3 * CHEM.DKH_TO_CACO3));
+      DOM.base.salifert_dkh.value = (savedAlkBase / CHEM.DKH_TO_CACO3).toFixed(1);
+    }
+
+    if(DOM.base.so4) DOM.base.so4.value = s.base?.so4_ppm ?? 20;
+    if(DOM.base.cl)  DOM.base.cl.value  = s.base?.cl_ppm ?? 30;
+    if(DOM.base.mg)  DOM.base.mg.value  = s.base?.mg_ppm ?? 5;
+    if(DOM.base.na)  DOM.base.na.value  = s.base?.na_ppm ?? 12;
+    if(DOM.base.ca)  DOM.base.ca.value  = s.base?.ca_ppm ?? 95;
+    if(DOM.base.ro)  DOM.base.ro.value  = s.base?.ro_percent ?? 0;
+
+    if(DOM.target.so4) DOM.target.so4.value = s.target?.so4_ppm ?? 75;
+    if(DOM.target.cl)  DOM.target.cl.value  = s.target?.cl_ppm ?? 75;
+    if(DOM.target.alk) DOM.target.alk.value = s.target?.alk_caco3_ppm ?? 10;
+    if(DOM.target.mg)  DOM.target.mg.value  = s.target?.mg_ppm ?? 5;
+    if(DOM.target.na)  DOM.target.na.value  = s.target?.na_ppm ?? 12;
+    if(DOM.target.ca)  DOM.target.ca.value  = s.target?.ca_ppm ?? 95;
+
+    if(DOM.locks.mg) DOM.locks.mg.checked = s.locks?.mg ?? true;
+    if(DOM.locks.na) DOM.locks.na.checked = s.locks?.na ?? true;
+    if(DOM.locks.ca) DOM.locks.ca.checked = s.locks?.ca ?? true;
+
+    if(DOM.add.ams) DOM.add.ams.value = s.additions?.ams_ml_per_l ?? 0;
+    if(DOM.add.phos) DOM.add.phos.value = s.additions?.phos75_ml_per_l ?? 0;
+    if(DOM.add.cacl2) DOM.add.cacl2.value = s.additions?.cacl2_g_per_l ?? 0;
+    if(DOM.add.gypsum) DOM.add.gypsum.value = s.additions?.gypsum_g_per_l ?? 0;
+    if(DOM.add.epsom) DOM.add.epsom.value = s.additions?.epsom_g_per_l ?? 0;
+    if(DOM.add.nacl) DOM.add.nacl.value = s.additions?.nacl_g_per_l ?? 0;
+
+    if(DOM.volumes.mash) DOM.volumes.mash.value = s.volumes?.mash_l ?? 550;
+    if(DOM.volumes.sparge) DOM.volumes.sparge.value = s.volumes?.sparge_l ?? 300;
+
+    if(DOM.caps.na) DOM.caps.na.value = s.caps?.na_max_ppm ?? 30;
+    if(DOM.caps.mg) DOM.caps.mg.value = s.caps?.mg_max_ppm ?? 10;
+    if(DOM.caps.ca) DOM.caps.ca.value = s.caps?.ca_max_ppm ?? 150;
+  }
+
+  if(saved.wf && DOM.dosage.cacl2WeighForm){
+    DOM.dosage.cacl2WeighForm.value = saved.wf;
+  }
+
+  const savedWorkflow = loadWorkflowState();
+  if(savedWorkflow){
+    WORKFLOW.lastAutofitSignature = savedWorkflow.lastAutofitSignature;
+    WORKFLOW.autofitDone = savedWorkflow.autofitDone;
+    WORKFLOW.dosagesOpened = savedWorkflow.dosagesOpened;
+    WORKFLOW.paramsReviewed = !!savedWorkflow.paramsReviewed;
+    WORKFLOW.additionsFromAutofit = !!savedWorkflow.additionsFromAutofit;
+    WORKFLOW.compare = savedWorkflow.compare;
+  }
+
+  if(editingPresetIdx===null) fillPresetEditorFromTargets();
+  updatePresetEditorUI();
+
+  render();
+  RO_HINT.lastValue = safeNum(DOM.base.ro?.value, 0);
+  initHistory();
+})();
+</script>
+
+</body>
+</html>
