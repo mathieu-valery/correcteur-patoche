@@ -4,6 +4,12 @@ Expo React Native application for water correction.
 
 ## 📱 Local Development & Testing on Phone
 
+### Install dependencies
+
+```bash
+npm install
+
+```
 ### Starting the Expo Dev Server
 
 ```bash
