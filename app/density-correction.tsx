@@ -44,6 +44,7 @@ export default function CorrecteurScreen() {
         originWhitelist={['*']}
         source={{ html: htmlContent, baseUrl: '' }}
         style={styles.webview}
+        backgroundColor="#000000"
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
@@ -56,14 +57,16 @@ export default function CorrecteurScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#000000',
   },
   webview: {
     flex: 1,
+    backgroundColor: '#000000',
   },
 });
-
