@@ -1248,7 +1248,7 @@
     }
     .sheet{
       position:absolute; left:50%; transform:translateX(-50%);
-      bottom:12px;
+      bottom:calc(12px + env(safe-area-inset-bottom));
       width:min(1160px, calc(100vw - 24px));
       max-height:78vh;
       overflow:hidden;
