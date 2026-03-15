@@ -1,6 +1,8 @@
 # Correcteur Patoche
 
-Expo React Native application for water correction.
+Expo React Native application for brewing calculators (water correction and density correction) by Microbrasserie Patoche.
+
+![Patoche Banner](assets/images/partial-patoche.png)
 
 ## 📱 Local Development & Testing on Phone
 
